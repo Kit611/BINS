@@ -2,42 +2,80 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
+#include <arpa/inet.h>
+# include <unistd.h>
 
-// Функция для генерации нормально распределённого случайного числа
-double normal_random(double mean, double stddev) {
-    double u1 = ((double) rand() / RAND_MAX); // Генерация первого равномерного случайного числа
-    double u2 = ((double) rand() / RAND_MAX); // Генерация второго равномерного случайного числа
+#define SERVER_PORT 12345
+#define SERVER_IP "127.0.0.1"
+#define MAX_BUFFER_SIZE 1024 
+#define NUM_SAMPLES 900
+#define SIGMA 0.025
+#define LIMIT 3.0
 
-    // Применение метода Box-Muller
-    double z0 = sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI * u2);
-    return z0 * stddev + mean; // Преобразование в нормальное распределение
+
+void send_array(double *array, size_t size, const char *host) {
+    int sock;
+    struct sockaddr_in server_addr;
+    
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock < 0) {
+        perror("Ошибка создания сокета");
+        exit(EXIT_FAILURE);
+    }
+
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(SERVER_PORT);
+    inet_pton(AF_INET, host, &server_addr.sin_addr);
+
+    for (size_t i = 0; i < size; i++) {
+        char buffer[MAX_BUFFER_SIZE];
+        snprintf(buffer, sizeof(buffer), "%f", array[i]);
+        
+        ssize_t sent_bytes = sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
+        if (sent_bytes < 0) {
+            perror("Ошибка отправки данных");
+        } else {
+            printf("Отправлено: %s\n", buffer);
+        }
+
+        usleep(1000); // Задержка 1 мс
+    }
+    
+    close(sock);
 }
 
-// Функция для генерации нормально распределённого числа в заданном диапазоне
-double bounded_normal_random(double mean, double stddev, double min, double max) {
-    double value;
+void generate_normal_distribution(double *values, int n) {
+    int i = 0;
+    while (i < n) {
+        double u1, u2, s, z0, z1;
 
-    do {
-        value = normal_random(mean, stddev);
-    } while (value < min || value > max); // Повторяем, пока значение не попадает в диапазон
+        do {
+            u1 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+            u2 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+            s = u1 * u1 + u2 * u2;
+        } while (s >= 1 || s == 0);
 
-    return value;
+        double factor = sqrt(-2.0 * log(s) / s);
+        z0 = u1 * factor * SIGMA;
+        z1 = u2 * factor * SIGMA;
+
+        if (z0 < -LIMIT * SIGMA) z0 = -LIMIT * SIGMA;
+        if (z0 > LIMIT * SIGMA) z0 = LIMIT * SIGMA;
+        if (z1 < -LIMIT * SIGMA) z1 = -LIMIT * SIGMA;
+        if (z1 > LIMIT * SIGMA) z1 = LIMIT * SIGMA;
+
+        values[i++] = z0;
+        if (i < n) values[i++] = z1;
+    }
 }
 
 int main() {
-    // Инициализация генератора случайных чисел
     srand(time(NULL));
-
-    double mean = 0.0045;    // Среднее значение, чтобы центрировать распределение
-    double stddev = 0.025;   // Стандартное отклонение
-    double min = 0.0;        // Нижняя граница
-    double max = 0.009;      // Верхняя граница
-
-    // Генерация и вывод 10 нормально распределённых случайных чисел в диапазоне [0, 0.009]
-    for (int i = 0; i < 10; i++) {
-        double random_value = bounded_normal_random(mean, stddev, min, max);
-        printf("%f\n", random_value);
-    }
-
+    double values[NUM_SAMPLES];
+    generate_normal_distribution(values, NUM_SAMPLES);
+    size_t size=sizeof(values)/sizeof(values[0]);
+    send_array(values,size,SERVER_IP);
     return 0;
 }
