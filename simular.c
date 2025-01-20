@@ -5,11 +5,12 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <sqlite3.h>
 
 #define SERVER_PORT 12345
 #define SERVER_IP "127.0.0.1"
 #define MAX_BUFFER_SIZE 1024 
-#define NUM_SAMPLES 900 
+#define NUM_SAMPLES 10
 #define SIGMA 0.025 
 #define LIMIT 3.0   
 
@@ -46,12 +47,15 @@ void send_array(double *array, size_t size, const char *host)
     close(sock);
 }
 
-void generate_normal_distribution(double *values, int n) {
+void generate_normal_distribution(double *values, int n)
+{
     int i = 0;
-    while (i < n) {
+    while (i < n)
+    {
         double u1, u2, s, z0, z1;
 
-        do {
+        do
+        {
             u1 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
             u2 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
             s = u1 * u1 + u2 * u2;
@@ -78,7 +82,7 @@ float model_fly()
 }
 
 int main(void)
-{
+{        
     srand(time(NULL));
     double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));
     if (values == NULL) 
@@ -90,7 +94,7 @@ int main(void)
     float real_h=model_fly();
     float P;
     float p;
-    float* sys_er;
+    float sys_er;
     const float P_0=1013.25;
     const int H=8400;
     float stepen=real_h/8400;
@@ -98,15 +102,40 @@ int main(void)
     P=P_0*e;
     p=P;
     printf("Введите погрешность от -4.5 до 4.5: \n");
-    scanf("%F",sys_er);
-    P+=*sys_er;
+    scanf("%f",&sys_er);
+    P+=sys_er;
     printf("Время:\tРеальная высота(м):\tРеальная высота(mbar):\tДанные на выход с барометра:\n"); 
-    for(int i=0;i<900;i++){
+    for(int i=0;i<NUM_SAMPLES;i++)
+    {
         P+=values[i];
         printf("  %d\t  %f\t             %f\t              %f\n",i,real_h,p,P);
+        sqlite3 *db;
+        char *err_msg=0;
+        int rc=sqlite3_open("Logs.db",&db);
+        if(rc !=SQLITE_OK)
+        {
+        sqlite3_close(db);
+        return 1;
+        }   
+        char sql[256];
+        snprintf(sql, sizeof(sql), "INSERT INTO Barometr VALUES (%d,%f,%f,%f)", i, real_h, p, P);
+        rc=sqlite3_exec(db,sql,0,0,&err_msg);
+        if(rc!=SQLITE_OK)
+        {
+            printf ("SQL error: %s\n",err_msg);
+            sqlite3_free(err_msg);
+            sqlite3_close(db);
+            return 1;
+        }
+        sqlite3_close(db);
     }
+    char answer;
+    printf("Хотите отправить данные для построения графика(y/n))?");
+    scanf("%s",&answer);
+    if(answer=='y')
+    {
     size_t size=NUM_SAMPLES;
-    if(size==900)
+    if(size==NUM_SAMPLES)
     {
         send_array(values,size,SERVER_IP);
         printf("%s","Отправлено");
@@ -114,6 +143,11 @@ int main(void)
     else
     {
         printf("Количество элементов: %ld", size);
+    }
+    }
+    else
+    {
+        exit;
     }
     free(values);
     return 0;
