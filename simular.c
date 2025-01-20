@@ -39,11 +39,7 @@ void send_array(double *array, size_t size, const char *host)
         if (sent_bytes < 0) 
         {
             perror("Ошибка отправки данных");
-        } else 
-        {
-            printf("Отправлено: %s\n", buffer);
         }
-
         usleep(1000);
     }
     
@@ -104,8 +100,11 @@ int main(void)
     printf("Введите погрешность от -4.5 до 4.5: \n");
     scanf("%F",sys_er);
     P+=*sys_er;
-    p=P;
     printf("Время:\tРеальная высота(м):\tРеальная высота(mbar):\tДанные на выход с барометра:\n"); 
+    for(int i=0;i<900;i++){
+        P+=values[i];
+        printf("  %d\t  %f\t             %f\t              %f\n",i,real_h,p,P);
+    }
     size_t size=NUM_SAMPLES;
     if(size==900)
     {
