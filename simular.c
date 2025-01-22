@@ -85,7 +85,8 @@ int main(void)
 {        
     srand(time(NULL));
     double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));
-    if (values == NULL) 
+    double *Bar = (double *)malloc(NUM_SAMPLES * sizeof(double));
+    if (values == NULL || Bar==NULL) 
     {
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
@@ -108,6 +109,7 @@ int main(void)
     for(int i=0;i<NUM_SAMPLES;i++)
     {
         P+=values[i];
+        Bar[i]=P;
         printf("  %d\t  %f\t             %f\t              %f\n",i,real_h,p,P);
         sqlite3 *db;
         char *err_msg=0;
@@ -137,8 +139,8 @@ int main(void)
     size_t size=NUM_SAMPLES;
     if(size==NUM_SAMPLES)
     {
-        send_array(values,size,SERVER_IP);
-        printf("%s","Отправлено");
+        send_array(Bar,size,SERVER_IP);
+        printf("%s","Отправлено\n");
     }
     else
     {
