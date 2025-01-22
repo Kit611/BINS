@@ -10,11 +10,10 @@
 #define SERVER_PORT 12345
 #define SERVER_IP "127.0.0.1"
 #define MAX_BUFFER_SIZE 1024 
-#define NUM_SAMPLES 10
-#define SIGMA 0.135
+#define SIGMA_gyro 0.135
 #define LIMIT 3.0   
 
-void send_array(double *array, size_t size, const char *host)
+void send_array_gyro(double *array, size_t size, const char *host)
 {
     int sock;
     struct sockaddr_in server_addr;
@@ -42,7 +41,7 @@ void send_array(double *array, size_t size, const char *host)
     close(sock);
 }
 
-void generate_normal_distribution(double *values, int n)
+void generate_normal_distribution_gyro(double *values, int n)
 {
     int i = 0;
     while (i < n)
@@ -56,25 +55,25 @@ void generate_normal_distribution(double *values, int n)
         } while (s >= 1 || s == 0);
 
         double factor = sqrt(-2.0 * log(s) / s);
-        z0 = u1 * factor * SIGMA;
-        z1 = u2 * factor * SIGMA;
-        if (z0 < -LIMIT * SIGMA) z0 = -LIMIT * SIGMA;
-        if (z0 > LIMIT * SIGMA) z0 = LIMIT * SIGMA;
-        if (z1 < -LIMIT * SIGMA) z1 = -LIMIT * SIGMA;
-        if (z1 > LIMIT * SIGMA) z1 = LIMIT * SIGMA;
+        z0 = u1 * factor * SIGMA_gyro;
+        z1 = u2 * factor * SIGMA_gyro;
+        if (z0 < -LIMIT * SIGMA_gyro) z0 = -LIMIT * SIGMA_gyro;
+        if (z0 > LIMIT * SIGMA_gyro) z0 = LIMIT * SIGMA_gyro;
+        if (z1 < -LIMIT * SIGMA_gyro) z1 = -LIMIT * SIGMA_gyro;
+        if (z1 > LIMIT * SIGMA_gyro) z1 = LIMIT * SIGMA_gyro;
         values[i++] = z0;
         if (i < n) values[i++] = z1;
     }
 }
 
-float model_fly(double *roll,double *pitch,double *yaw)
-{
-    *roll=0.0;//крен ось X
-    *pitch=0.0;//тангаж ось Y       C/sec
-    *yaw=0.0;//рысканье ось Z 
-}
+// float model_fly(double *roll,double *pitch,double *yaw)
+// {
+//     *roll=0.0;//крен ось X
+//     *pitch=0.0;//тангаж ось Y       C/sec
+//     *yaw=0.0;//рысканье ось Z 
+// }
 
-int main(void)
+double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SAMPLES,double *data_roll,double *data_pitch,double * data_yaw)
 {
     srand(time(NULL));
     double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));
@@ -83,9 +82,7 @@ int main(void)
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }
-    generate_normal_distribution(values, NUM_SAMPLES);
-    double roll,pitch,yaw;
-    model_fly(&roll,&pitch,&yaw);
+    generate_normal_distribution_gyro(values, NUM_SAMPLES);
     printf("Время:\t  Крен:\t         Тангаж:\tРысканье:\n");
     double Roll=roll;
     double Pitch=pitch;
@@ -96,6 +93,12 @@ int main(void)
         pitch+=values[i];
         yaw+=values[i];
         printf("  %d\t%f\t%f\t%f\n",i,roll,pitch,yaw);
+        if(i==time_request)
+        {
+            *data_roll=roll;
+            *data_pitch=pitch;
+            *data_yaw=yaw;
+        }
         sqlite3 *db;
         char *err_msg=0;
         int rc=sqlite3_open("Logs.db",&db);
@@ -127,7 +130,7 @@ int main(void)
     size_t size=NUM_SAMPLES;
     if(size==NUM_SAMPLES)
     {
-        send_array(values,size,SERVER_IP);
+        send_array_gyro(values,size,SERVER_IP);
         printf("%s","Отправлено\n");
     }
     else
@@ -140,5 +143,4 @@ int main(void)
         exit;
     }
     free(values);
-    return 0;
 }

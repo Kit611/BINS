@@ -10,11 +10,10 @@
 #define SERVER_PORT 12345
 #define SERVER_IP "127.0.0.1"
 #define MAX_BUFFER_SIZE 1024 
-#define NUM_SAMPLES 10
-#define SIGMA 0.025 
+#define SIGMA_bar 0.025 
 #define LIMIT 3.0   
 
-void send_array(double *array, size_t size, const char *host)
+void send_array_bar(double *array, size_t size, const char *host)
 {
     int sock;
     struct sockaddr_in server_addr;
@@ -47,7 +46,7 @@ void send_array(double *array, size_t size, const char *host)
     close(sock);
 }
 
-void generate_normal_distribution(double *values, int n)
+void generate_normal_distribution_bar(double *values, int n)
 {
     int i = 0;
     while (i < n)
@@ -62,26 +61,26 @@ void generate_normal_distribution(double *values, int n)
         } while (s >= 1 || s == 0);
 
         double factor = sqrt(-2.0 * log(s) / s);
-        z0 = u1 * factor * SIGMA;
-        z1 = u2 * factor * SIGMA;
+        z0 = u1 * factor * SIGMA_bar;
+        z1 = u2 * factor * SIGMA_bar;
 
-        if (z0 < -LIMIT * SIGMA) z0 = -LIMIT * SIGMA;
-        if (z0 > LIMIT * SIGMA) z0 = LIMIT * SIGMA;
-        if (z1 < -LIMIT * SIGMA) z1 = -LIMIT * SIGMA;
-        if (z1 > LIMIT * SIGMA) z1 = LIMIT * SIGMA;
+        if (z0 < -LIMIT * SIGMA_bar) z0 = -LIMIT * SIGMA_bar;
+        if (z0 > LIMIT * SIGMA_bar) z0 = LIMIT * SIGMA_bar;
+        if (z1 < -LIMIT * SIGMA_bar) z1 = -LIMIT * SIGMA_bar;
+        if (z1 > LIMIT * SIGMA_bar) z1 = LIMIT * SIGMA_bar;
 
         values[i++] = z0;
         if (i < n) values[i++] = z1;
     }
 }
 
-float model_fly()
-{
-    float h=1000;
-    return h;
-}
+// double model_fly()
+// {
+//     double h=1000;
+//     return h;
+// }
 
-int main(void)
+double data_bar(double h,double sys_er, int time_request, int NUM_SAMPLES)
 {        
     srand(time(NULL));
     double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));
@@ -91,19 +90,17 @@ int main(void)
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }
-    generate_normal_distribution(values, NUM_SAMPLES);
-    float real_h=model_fly();
-    float P;
-    float p;
-    float sys_er;
-    const float P_0=1013.25;
+    generate_normal_distribution_bar(values, NUM_SAMPLES);
+    double real_h=h;
+    double P;
+    double p;
+    const double P_0=1013.25;
     const int H=8400;
-    float stepen=real_h/8400;
-    float e=exp(-stepen);
+    double stepen=real_h/8400;
+    double e=exp(-stepen);
     P=P_0*e;
     p=P;
-    printf("Введите погрешность от -4.5 до 4.5: \n");
-    scanf("%f",&sys_er);
+    double data_request;
     P+=sys_er;
     printf("Время:\tРеальная высота(м):\tРеальная высота(mbar):\tДанные на выход с барометра:\n"); 
     for(int i=0;i<NUM_SAMPLES;i++)
@@ -130,6 +127,10 @@ int main(void)
             return 1;
         }
         sqlite3_close(db);
+        if(i==time_request)
+        {
+            data_request=P;
+        }
     }
     char answer;
     printf("Хотите отправить данные для построения графика(y/n))?");
@@ -139,7 +140,7 @@ int main(void)
     size_t size=NUM_SAMPLES;
     if(size==NUM_SAMPLES)
     {
-        send_array(Bar,size,SERVER_IP);
+        send_array_bar(Bar,size,SERVER_IP);
         printf("%s","Отправлено\n");
     }
     else
@@ -152,7 +153,7 @@ int main(void)
         exit;
     }
     free(values);
-    return 0;
+    return data_request;
 }
 
 //начальные координаты->> движение вверх ->> скорость набора высоты 3м/с ->> от 0с до 10с, расстояние. Через запрос

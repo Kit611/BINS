@@ -10,11 +10,10 @@
 #define SERVER_PORT 12345
 #define SERVER_IP "127.0.0.1"
 #define MAX_BUFFER_SIZE 1024 
-#define NUM_SAMPLES 10
-#define SIGMA 0.22
+#define SIGMA_mag 0.22
 #define LIMIT 3.0  
 
-void send_array(double *array, size_t size, const char *host)
+void send_array_mag(double *array, size_t size, const char *host)
 {
     int sock;
     struct sockaddr_in server_addr;
@@ -42,7 +41,7 @@ void send_array(double *array, size_t size, const char *host)
     close(sock);
 }
 
-void generate_normal_distribution(double *values, int n)
+void generate_normal_distribution_mag(double *values, int n)
 {
     int i = 0;
     while (i < n)
@@ -56,25 +55,25 @@ void generate_normal_distribution(double *values, int n)
         } while (s >= 1 || s == 0);
 
         double factor = sqrt(-2.0 * log(s) / s);
-        z0 = u1 * factor * SIGMA;
-        z1 = u2 * factor * SIGMA;
-        if (z0 < -LIMIT * SIGMA) z0 = -LIMIT * SIGMA;
-        if (z0 > LIMIT * SIGMA) z0 = LIMIT * SIGMA;
-        if (z1 < -LIMIT * SIGMA) z1 = -LIMIT * SIGMA;
-        if (z1 > LIMIT * SIGMA) z1 = LIMIT * SIGMA;
+        z0 = u1 * factor * SIGMA_mag;
+        z1 = u2 * factor * SIGMA_mag;
+        if (z0 < -LIMIT * SIGMA_mag) z0 = -LIMIT * SIGMA_mag;
+        if (z0 > LIMIT * SIGMA_mag) z0 = LIMIT * SIGMA_mag;
+        if (z1 < -LIMIT * SIGMA_mag) z1 = -LIMIT * SIGMA_mag;
+        if (z1 > LIMIT * SIGMA_mag) z1 = LIMIT * SIGMA_mag;
         values[i++] = z0;
         if (i < n) values[i++] = z1;
     }
 }
 
-float model_fly(double *x,double *y,double *z)
-{
-    *x=0;
-    *y=0; //gauss
-    *z=0;
-}
+// float model_fly(double *x,double *y,double *z)
+// {
+//     *x=0;
+//     *y=0; //gauss
+//     *z=0;
+// }
 
-int main(void)
+double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,double *data_xmG,double *data_ymG,double *data_zmG)
 {
     srand(time(NULL));
     double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));
@@ -83,9 +82,7 @@ int main(void)
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }
-    generate_normal_distribution(values, NUM_SAMPLES);
-    double x,y,z;
-    model_fly(&x,&y,&z);
+    generate_normal_distribution_mag(values, NUM_SAMPLES);
     double x_mG=x*1000;
     double y_mG=y*1000; //в милигаусс
     double z_mG=z*1000;
@@ -99,6 +96,12 @@ int main(void)
         y_mG+=values[i];
         z_mG+=values[i];
         printf("  %d\t          %f\t                 %f\t                  %f\n",i,x_mG,y_mG,z_mG);
+        if(i==time_request)
+        {
+            *data_xmG=x_mG;
+            *data_ymG=y_mG;
+            *data_zmG=z_mG;
+        }
         sqlite3 *db;
         char *err_msg=0;
         int rc=sqlite3_open("Logs.db",&db);
@@ -130,7 +133,7 @@ int main(void)
     size_t size=NUM_SAMPLES;
     if(size==NUM_SAMPLES)
     {
-        send_array(values,size,SERVER_IP);
+        send_array_mag(values,size,SERVER_IP);
         printf("%s","Отправлено\n");
     }
     else
@@ -143,5 +146,4 @@ int main(void)
         exit;
     }
     free(values);
-    return 0;
 }

@@ -10,11 +10,10 @@
 #define SERVER_PORT 12345
 #define SERVER_IP "127.0.0.1"
 #define MAX_BUFFER_SIZE 1024 
-#define NUM_SAMPLES 10
-#define SIGMA 1.29
+#define SIGMA_accel 1.29
 #define LIMIT 3.0   
 
-void send_array(double *array, size_t size, const char *host)
+void send_array_accel(double *array, size_t size, const char *host)
 {
     int sock;
     struct sockaddr_in server_addr;
@@ -42,7 +41,7 @@ void send_array(double *array, size_t size, const char *host)
     close(sock);
 }
 
-void generate_normal_distribution(double *values, int n)
+void generate_normal_distribution_accel(double *values, int n)
 {
     int i = 0;
     while (i < n)
@@ -56,25 +55,25 @@ void generate_normal_distribution(double *values, int n)
         } while (s >= 1 || s == 0);
 
         double factor = sqrt(-2.0 * log(s) / s);
-        z0 = u1 * factor * SIGMA;
-        z1 = u2 * factor * SIGMA;
-        if (z0 < -LIMIT * SIGMA) z0 = -LIMIT * SIGMA;
-        if (z0 > LIMIT * SIGMA) z0 = LIMIT * SIGMA;
-        if (z1 < -LIMIT * SIGMA) z1 = -LIMIT * SIGMA;
-        if (z1 > LIMIT * SIGMA) z1 = LIMIT * SIGMA;
+        z0 = u1 * factor * SIGMA_accel;
+        z1 = u2 * factor * SIGMA_accel;
+        if (z0 < -LIMIT * SIGMA_accel) z0 = -LIMIT * SIGMA_accel;
+        if (z0 > LIMIT * SIGMA_accel) z0 = LIMIT * SIGMA_accel;
+        if (z1 < -LIMIT * SIGMA_accel) z1 = -LIMIT * SIGMA_accel;
+        if (z1 > LIMIT * SIGMA_accel) z1 = LIMIT * SIGMA_accel;
         values[i++] = z0;
         if (i < n) values[i++] = z1;
     }
 }
 
-double model_fly(double *Y_axis_acceleration, double *X_axis_acceleration,double *Z_axis_acceleration)
-{
-    *Y_axis_acceleration=0.0;//м/с^2 ось Y
-    *X_axis_acceleration=0.0;// ось X
-    *Z_axis_acceleration=9.81;//ось Z
-}
+// double model_fly(double *Y_axis_acceleration, double *X_axis_acceleration,double *Z_axis_acceleration)
+// {
+//     *Y_axis_acceleration=0.0;//м/с^2 ось Y
+//     *X_axis_acceleration=0.0;// ось X
+//     *Z_axis_acceleration=9.81;//ось Z
+// }
 
-int main(void)
+double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z_axis_acceleration,int time_request,int NUM_SAMPLES,double *Y_axis,double *X_axis,double *Z_axis)
 {
     srand(time(NULL));
     double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));
@@ -84,11 +83,7 @@ int main(void)
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }
-    generate_normal_distribution(values, NUM_SAMPLES);
-    double Y_axis_acceleration;
-    double X_axis_acceleration;
-    double Z_axis_acceleration;
-    model_fly(&Y_axis_acceleration,&X_axis_acceleration,&Z_axis_acceleration);
+    generate_normal_distribution_accel(values, NUM_SAMPLES);
     double Z=Z_axis_acceleration;
     double Y=Y_axis_acceleration;
     double X=X_axis_acceleration;
@@ -99,6 +94,12 @@ int main(void)
         Z_axis_acceleration+=values[i];
         test[i]=Z_axis_acceleration;
         printf("  %d\t    %f\t            %f\t            %f\n",i,X_axis_acceleration,Y_axis_acceleration,Z_axis_acceleration);
+        if(i==time_request)
+        {
+            *Y_axis=Y_axis_acceleration;
+            *X_axis=X_axis_acceleration;
+            *Z_axis=Z_axis_acceleration;
+        }
         sqlite3 *db;
         char *err_msg=0;
         int rc=sqlite3_open("Logs.db",&db);
@@ -130,7 +131,7 @@ int main(void)
     size_t size=NUM_SAMPLES;
     if(size==NUM_SAMPLES)
     {
-        send_array(test,size,SERVER_IP);
+        send_array_accel(test,size,SERVER_IP);
         printf("%s","Отправлено\n");
     }
     else
@@ -142,6 +143,5 @@ int main(void)
     {
         exit;
     }
-    free(values);
-    return 0;   
+    free(values);  
 }
