@@ -93,13 +93,10 @@ double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z
         X_axis_acceleration+=values[i];
         Z_axis_acceleration+=values[i];
         test[i]=Z_axis_acceleration;
-        printf("  %d\t    %f\t            %f\t            %f\n",i,X_axis_acceleration,Y_axis_acceleration,Z_axis_acceleration);
-        if(i==time_request)
-        {
-            *Y_axis=Y_axis_acceleration;
-            *X_axis=X_axis_acceleration;
-            *Z_axis=Z_axis_acceleration;
-        }
+        printf("  %d\t    %f\t            %f\t            %f\n",time_request,X_axis_acceleration,Y_axis_acceleration,Z_axis_acceleration);
+        *Y_axis=Y_axis_acceleration;
+        *X_axis=X_axis_acceleration;
+        *Z_axis=Z_axis_acceleration;
         sqlite3 *db;
         char *err_msg=0;
         int rc=sqlite3_open("Logs.db",&db);
@@ -109,7 +106,7 @@ double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z
         return 1;
         }   
         char sql[256];
-        snprintf(sql, sizeof(sql), "INSERT INTO Accelerometrs VALUES (%d,%f,%f,%f)", i, X_axis_acceleration, Y_axis_acceleration, Z_axis_acceleration);
+        snprintf(sql, sizeof(sql), "INSERT INTO Accelerometrs VALUES (%d,%f,%f,%f)", time_request, X_axis_acceleration, Y_axis_acceleration, Z_axis_acceleration);
         rc=sqlite3_exec(db,sql,0,0,&err_msg);
         if(rc!=SQLITE_OK)
         {
@@ -123,25 +120,25 @@ double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z
         Y_axis_acceleration=Y;
         X_axis_acceleration=X;
     }
-    char answer;
-    printf("Хотите отправить данные для построения графика(y/n))?");
-    scanf("%s",&answer);
-    if(answer=='y')
-    {
-    size_t size=NUM_SAMPLES;
-    if(size==NUM_SAMPLES)
-    {
-        send_array_accel(test,size,SERVER_IP);
-        printf("%s","Отправлено\n");
-    }
-    else
-    {
-        printf("Количество элементов: %ld", size);
-    }
-    }
-    else
-    {
-        exit;
-    }
+    // char answer;
+    // printf("Хотите отправить данные для построения графика(y/n))?");
+    // scanf("%s",&answer);
+    // if(answer=='y')
+    // {
+    // size_t size=NUM_SAMPLES;
+    // if(size==NUM_SAMPLES)
+    // {
+    //     send_array_accel(test,size,SERVER_IP);
+    //     printf("%s","Отправлено\n");
+    // }
+    // else
+    // {
+    //     printf("Количество элементов: %ld", size);
+    // }
+    // }
+    // else
+    // {
+    //     exit;
+    // }
     free(values);  
 }

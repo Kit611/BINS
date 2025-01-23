@@ -92,13 +92,10 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
         roll+=values[i];
         pitch+=values[i];
         yaw+=values[i];
-        printf("  %d\t%f\t%f\t%f\n",i,roll,pitch,yaw);
-        if(i==time_request)
-        {
-            *data_roll=roll;
-            *data_pitch=pitch;
-            *data_yaw=yaw;
-        }
+        printf("  %d\t%f\t%f\t%f\n",time_request,roll,pitch,yaw);
+        *data_roll=roll;
+        *data_pitch=pitch;
+        *data_yaw=yaw;
         sqlite3 *db;
         char *err_msg=0;
         int rc=sqlite3_open("Logs.db",&db);
@@ -108,7 +105,7 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
         return 1;
         }   
         char sql[256];
-        snprintf(sql, sizeof(sql), "INSERT INTO Gyroscopes VALUES (%d,%f,%f,%f)", i, roll, pitch, yaw);
+        snprintf(sql, sizeof(sql), "INSERT INTO Gyroscopes VALUES (%d,%f,%f,%f)", time_request, roll, pitch, yaw);
         rc=sqlite3_exec(db,sql,0,0,&err_msg);
         if(rc!=SQLITE_OK)
         {
@@ -122,25 +119,25 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
         pitch=Pitch;
         yaw=Yaw;
     }
-    char answer;
-    printf("Хотите отправить данные для построения графика(y/n))?");
-    scanf("%s",&answer);
-    if(answer=='y')
-    {
-    size_t size=NUM_SAMPLES;
-    if(size==NUM_SAMPLES)
-    {
-        send_array_gyro(values,size,SERVER_IP);
-        printf("%s","Отправлено\n");
-    }
-    else
-    {
-        printf("Количество элементов: %ld", size);
-    }
-    }
-    else
-    {
-        exit;
-    }
+    // char answer;
+    // printf("Хотите отправить данные для построения графика(y/n))?");
+    // scanf("%s",&answer);
+    // if(answer=='y')
+    // {
+    // size_t size=NUM_SAMPLES;
+    // if(size==NUM_SAMPLES)
+    // {
+    //     send_array_gyro(values,size,SERVER_IP);
+    //     printf("%s","Отправлено\n");
+    // }
+    // else
+    // {
+    //     printf("Количество элементов: %ld", size);
+    // }
+    // }
+    // else
+    // {
+    //     exit;
+    // }
     free(values);
 }

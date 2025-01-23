@@ -80,7 +80,7 @@ void generate_normal_distribution_bar(double *values, int n)
 //     return h;
 // }
 
-double data_bar(double h,double sys_er, int time_request, int NUM_SAMPLES)
+double data_bar(double h,double sys_er, int time_request,int NUM_SAMPLES)
 {        
     srand(time(NULL));
     double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));
@@ -107,7 +107,7 @@ double data_bar(double h,double sys_er, int time_request, int NUM_SAMPLES)
     {
         P+=values[i];
         Bar[i]=P;
-        printf("  %d\t  %f\t             %f\t              %f\n",i,real_h,p,P);
+        printf("  %d\t  %f\t             %f\t              %f\n",time_request,real_h,p,P);
         sqlite3 *db;
         char *err_msg=0;
         int rc=sqlite3_open("Logs.db",&db);
@@ -117,7 +117,7 @@ double data_bar(double h,double sys_er, int time_request, int NUM_SAMPLES)
         return 1;
         }   
         char sql[256];
-        snprintf(sql, sizeof(sql), "INSERT INTO Barometr VALUES (%d,%f,%f,%f)", i, real_h, p, P);
+        snprintf(sql, sizeof(sql), "INSERT INTO Barometr VALUES (%d,%f,%f,%f)", time_request, real_h, p, P);
         rc=sqlite3_exec(db,sql,0,0,&err_msg);
         if(rc!=SQLITE_OK)
         {
@@ -127,33 +127,28 @@ double data_bar(double h,double sys_er, int time_request, int NUM_SAMPLES)
             return 1;
         }
         sqlite3_close(db);
-        if(i==time_request)
-        {
-            data_request=P;
-        }
+        data_request=P;
     }
-    char answer;
-    printf("Хотите отправить данные для построения графика(y/n))?");
-    scanf("%s",&answer);
-    if(answer=='y')
-    {
-    size_t size=NUM_SAMPLES;
-    if(size==NUM_SAMPLES)
-    {
-        send_array_bar(Bar,size,SERVER_IP);
-        printf("%s","Отправлено\n");
-    }
-    else
-    {
-        printf("Количество элементов: %ld", size);
-    }
-    }
-    else
-    {
-        exit;
-    }
+    // char answer;
+    // printf("Хотите отправить данные для построения графика(y/n))?");
+    // scanf("%s",&answer);
+    // if(answer=='y')
+    // {
+    // size_t size=NUM_SAMPLES;
+    // if(size==NUM_SAMPLES)
+    // {
+    //     send_array_bar(Bar,size,SERVER_IP);
+    //     printf("%s","Отправлено\n");
+    // }
+    // else
+    // {
+    //     printf("Количество элементов: %ld", size);
+    // }
+    // }
+    // else
+    // {
+    //     exit;
+    // }
     free(values);
     return data_request;
 }
-
-//начальные координаты->> движение вверх ->> скорость набора высоты 3м/с ->> от 0с до 10с, расстояние. Через запрос

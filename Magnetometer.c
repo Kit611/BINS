@@ -95,13 +95,10 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
         x_mG+=values[i];
         y_mG+=values[i];
         z_mG+=values[i];
-        printf("  %d\t          %f\t                 %f\t                  %f\n",i,x_mG,y_mG,z_mG);
-        if(i==time_request)
-        {
-            *data_xmG=x_mG;
-            *data_ymG=y_mG;
-            *data_zmG=z_mG;
-        }
+        printf("  %d\t          %f\t                 %f\t                  %f\n",time_request,x_mG,y_mG,z_mG);
+        *data_xmG=x_mG;
+        *data_ymG=y_mG;
+        *data_zmG=z_mG;
         sqlite3 *db;
         char *err_msg=0;
         int rc=sqlite3_open("Logs.db",&db);
@@ -111,7 +108,7 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
         return 1;
         }   
         char sql[256];
-        snprintf(sql, sizeof(sql), "INSERT INTO Magnetometer VALUES (%d,%f,%f,%f)", i, x_mG, y_mG, z_mG);
+        snprintf(sql, sizeof(sql), "INSERT INTO Magnetometer VALUES (%d,%f,%f,%f)", time_request, x_mG, y_mG, z_mG);
         rc=sqlite3_exec(db,sql,0,0,&err_msg);
         if(rc!=SQLITE_OK)
         {
@@ -125,25 +122,25 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
         y_mG=Y;
         z_mG=Z;
     }
-    char answer;
-    printf("Хотите отправить данные для построения графика(y/n))?");
-    scanf("%s",&answer);
-    if(answer=='y')
-    {
-    size_t size=NUM_SAMPLES;
-    if(size==NUM_SAMPLES)
-    {
-        send_array_mag(values,size,SERVER_IP);
-        printf("%s","Отправлено\n");
-    }
-    else
-    {
-        printf("Количество элементов: %ld", size);
-    }
-    }
-    else
-    {
-        exit;
-    }
+    // char answer;
+    // printf("Хотите отправить данные для построения графика(y/n))?");
+    // scanf("%s",&answer);
+    // if(answer=='y')
+    // {
+    // size_t size=NUM_SAMPLES;
+    // if(size==NUM_SAMPLES)
+    // {
+    //     send_array_mag(values,size,SERVER_IP);
+    //     printf("%s","Отправлено\n");
+    // }
+    // else
+    // {
+    //     printf("Количество элементов: %ld", size);
+    // }
+    // }
+    // else
+    // {
+    //     exit;
+    // }
     free(values);
 }
