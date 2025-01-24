@@ -101,13 +101,11 @@ double data_bar(double h,double sys_er, int time_request,int NUM_SAMPLES)
     P=P_0*e;
     p=P;
     double data_request;
-    P+=sys_er;
-    printf("Время:\tРеальная высота(м):\tРеальная высота(mbar):\tДанные на выход с барометра:\n"); 
+    P+=sys_er; 
     for(int i=0;i<NUM_SAMPLES;i++)
     {
         P+=values[i];
         Bar[i]=P;
-        printf("  %d\t  %f\t             %f\t              %f\n",time_request,real_h,p,P);
         sqlite3 *db;
         char *err_msg=0;
         int rc=sqlite3_open("Logs.db",&db);
@@ -129,11 +127,6 @@ double data_bar(double h,double sys_er, int time_request,int NUM_SAMPLES)
         sqlite3_close(db);
         data_request=P;
     }
-    // char answer;
-    // printf("Хотите отправить данные для построения графика(y/n))?");
-    // scanf("%s",&answer);
-    // if(answer=='y')
-    // {
     // size_t size=NUM_SAMPLES;
     // if(size==NUM_SAMPLES)
     // {
@@ -143,11 +136,6 @@ double data_bar(double h,double sys_er, int time_request,int NUM_SAMPLES)
     // else
     // {
     //     printf("Количество элементов: %ld", size);
-    // }
-    // }
-    // else
-    // {
-    //     exit;
     // }
     free(values);
     return data_request;

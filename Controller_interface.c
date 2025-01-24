@@ -5,6 +5,7 @@
 #include "gyroscopes.c"
 #include "accelerometrs.c"
 #include "Magnetometer.c"
+#include "model_flight.c"
 
 #define NUM_SAMPLES 1
 
@@ -18,7 +19,7 @@ sqlite3 *db;
         sqlite3_close(db);
         return 1;
     }
-    char *sql="SELECT * FROM model_fly WHERE Time=?";
+    char *sql="SELECT * FROM model_flight WHERE Time=?";
     rc =sqlite3_prepare_v2(db,sql,-1,&res,0);
     if(rc==SQLITE_OK)
     {
@@ -47,31 +48,31 @@ sqlite3 *db;
 }
 
 int main(void)
-{
-    int time_request[2]={2,4};
+{    
+    flight();
+    int time_request=0;
     int time;
     double roll,pitch,yaw;
     double Z_axis_acceleration,Y_axis_acceleration,X_axis_acceleration;
     double x,y,z;
     double h;
     double sys_er;
-    int size=sizeof(time_request)/sizeof(time_request[0]);
+    int work_time=get_time();
     printf("Введите погрешность от -4.5 до 4.5: \n");
     scanf("%lf",&sys_er);
-    for(int i=0;i<size;i++)
+    printf("Время:\tГироскоп:\t\t\t\tАкселерометр:\t\t\t\tМагнетомерт:\t\t\t\tБарометр:\n");
+    for(int i=0;i<work_time;i++)
     {
-    data_bd(time_request[i],&time,&roll,&pitch,&yaw,&X_axis_acceleration,&Y_axis_acceleration,&Z_axis_acceleration,&x,&y,&z,&h);
+    data_bd(time_request,&time,&roll,&pitch,&yaw,&X_axis_acceleration,&Y_axis_acceleration,&Z_axis_acceleration,&x,&y,&z,&h);
     double data_roll,data_pitch,data_yaw;
-    data_gyro(roll,pitch,yaw,time_request[i],NUM_SAMPLES,&data_roll,&data_pitch,&data_yaw);
-    // printf("Данные с гироскопа:\nRoll: %f\nPitch: %f\nYaw: %f\n",data_roll,data_pitch,data_yaw);
+    data_gyro(roll,pitch,yaw,time_request,NUM_SAMPLES,&data_roll,&data_pitch,&data_yaw);
     double Y_axis,Z_axis,X_axis;
-    data_accel(Y_axis_acceleration,X_axis_acceleration,Z_axis_acceleration,time_request[i],NUM_SAMPLES,&Y_axis,&X_axis,&Z_axis);
-    // printf("Данные с акселерометра:\nX_axis: %f\nY_axis: %f\nZ_axis: %f\n",X_axis,Y_axis,Z_axis);
+    data_accel(Y_axis_acceleration,X_axis_acceleration,Z_axis_acceleration,time_request,NUM_SAMPLES,&Y_axis,&X_axis,&Z_axis);
     double data_xmG,data_ymG,data_zmG;
-    data_mag(x,y,z,time_request[i],NUM_SAMPLES,&data_xmG,&data_ymG,&data_zmG);
-    // printf("Данные с магнетометра:\nX_mG: %f\nY_mG: %f\nZ_mG: %f\n",data_xmG,data_ymG,data_zmG);
-    double bar=data_bar(h,sys_er,time_request[i],NUM_SAMPLES);
-    }
-    // printf("Данные с бародатчика: %f\n",bar);
+    data_mag(x,y,z,time_request,NUM_SAMPLES,&data_xmG,&data_ymG,&data_zmG);
+    double bar=data_bar(h,sys_er,time_request,NUM_SAMPLES);
+    printf("%d|\t(%f;%f;%f)|\t\t(%f;%f;%f)|\t\t(%f;%f;%f)|\t\t%f\n",i,data_roll,data_pitch,data_yaw,X_axis,Y_axis,Z_axis,data_xmG,data_ymG,data_zmG,bar);
+    time_request++;
+    }    
     return 0;
 }

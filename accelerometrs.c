@@ -87,13 +87,11 @@ double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z
     double Z=Z_axis_acceleration;
     double Y=Y_axis_acceleration;
     double X=X_axis_acceleration;
-    printf("Время:\tУскорение по оси X:\tУскорение по оси Y:\tУскорение по оси Z:\n");
     for(int i=0;i<NUM_SAMPLES;i++){
         Y_axis_acceleration+=values[i];
         X_axis_acceleration+=values[i];
         Z_axis_acceleration+=values[i];
-        test[i]=Z_axis_acceleration;
-        printf("  %d\t    %f\t            %f\t            %f\n",time_request,X_axis_acceleration,Y_axis_acceleration,Z_axis_acceleration);
+        test[i]=Z_axis_acceleration;    
         *Y_axis=Y_axis_acceleration;
         *X_axis=X_axis_acceleration;
         *Z_axis=Z_axis_acceleration;
@@ -120,25 +118,15 @@ double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z
         Y_axis_acceleration=Y;
         X_axis_acceleration=X;
     }
-    // char answer;
-    // printf("Хотите отправить данные для построения графика(y/n))?");
-    // scanf("%s",&answer);
-    // if(answer=='y')
-    // {
     // size_t size=NUM_SAMPLES;
     // if(size==NUM_SAMPLES)
     // {
-    //     send_array_accel(test,size,SERVER_IP);
+    //     send_array_accel(values,size,SERVER_IP);
     //     printf("%s","Отправлено\n");
     // }
     // else
     // {
     //     printf("Количество элементов: %ld", size);
-    // }
-    // }
-    // else
-    // {
-    //     exit;
     // }
     free(values);  
 }

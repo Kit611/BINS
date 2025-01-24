@@ -18,6 +18,8 @@ int main(){
             "CREATE TABLE Gyroscopes(Time int,Roll float,Pitch float,Yaw float);";
     char *mag="DROP TABLE IF EXISTS Magnetometer;"
             "CREATE TABLE Magnetometer(Time int,X float,Y float,Z float);";      
+    char *model="DROP TABLE IF EXISTS model_flight;"
+            "CREATE TABLE model_flight(Time int,Roll float,Pitch float,Yaw float,X_axis_acceleration float,Y_axis_acceleration float,Z_axis_acceleration float,X float,Y float,Z float,Height float);";
     rc=sqlite3_exec(db,accel,0,0,&err_msg);
     if(rc !=SQLITE_OK)
     {
@@ -43,6 +45,14 @@ int main(){
         return 1;
     }
      rc=sqlite3_exec(db,mag,0,0,&err_msg);
+    if(rc !=SQLITE_OK)
+    {
+        printf ("SQL error: %s\n",err_msg);
+        sqlite3_free(err_msg);
+        sqlite3_close(db);
+        return 1;
+    }
+    rc=sqlite3_exec(db,model,0,0,&err_msg);
     if(rc !=SQLITE_OK)
     {
         printf ("SQL error: %s\n",err_msg);

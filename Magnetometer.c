@@ -86,7 +86,6 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
     double x_mG=x*1000;
     double y_mG=y*1000; //в милигаусс
     double z_mG=z*1000;
-    printf("Время:\tМагнитное поле по оси X:\tМагнитное поле по оси Y:\tМагнитное поле по оси Z:\n");
     double X=x_mG;
     double Y=y_mG;
     double Z=z_mG;
@@ -95,7 +94,6 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
         x_mG+=values[i];
         y_mG+=values[i];
         z_mG+=values[i];
-        printf("  %d\t          %f\t                 %f\t                  %f\n",time_request,x_mG,y_mG,z_mG);
         *data_xmG=x_mG;
         *data_ymG=y_mG;
         *data_zmG=z_mG;
@@ -122,11 +120,6 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
         y_mG=Y;
         z_mG=Z;
     }
-    // char answer;
-    // printf("Хотите отправить данные для построения графика(y/n))?");
-    // scanf("%s",&answer);
-    // if(answer=='y')
-    // {
     // size_t size=NUM_SAMPLES;
     // if(size==NUM_SAMPLES)
     // {
@@ -136,11 +129,6 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
     // else
     // {
     //     printf("Количество элементов: %ld", size);
-    // }
-    // }
-    // else
-    // {
-    //     exit;
     // }
     free(values);
 }

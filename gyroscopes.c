@@ -83,7 +83,6 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
         return 1;
     }
     generate_normal_distribution_gyro(values, NUM_SAMPLES);
-    printf("Время:\t  Крен:\t         Тангаж:\tРысканье:\n");
     double Roll=roll;
     double Pitch=pitch;
     double Yaw=yaw;
@@ -92,7 +91,6 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
         roll+=values[i];
         pitch+=values[i];
         yaw+=values[i];
-        printf("  %d\t%f\t%f\t%f\n",time_request,roll,pitch,yaw);
         *data_roll=roll;
         *data_pitch=pitch;
         *data_yaw=yaw;
@@ -119,11 +117,6 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
         pitch=Pitch;
         yaw=Yaw;
     }
-    // char answer;
-    // printf("Хотите отправить данные для построения графика(y/n))?");
-    // scanf("%s",&answer);
-    // if(answer=='y')
-    // {
     // size_t size=NUM_SAMPLES;
     // if(size==NUM_SAMPLES)
     // {
@@ -133,11 +126,6 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
     // else
     // {
     //     printf("Количество элементов: %ld", size);
-    // }
-    // }
-    // else
-    // {
-    //     exit;
     // }
     free(values);
 }
