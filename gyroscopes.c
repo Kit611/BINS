@@ -7,13 +7,13 @@
 #include <unistd.h>
 #include <sqlite3.h>
 
-#define SERVER_PORT 12345
-#define SERVER_IP "127.0.0.1"
-#define MAX_BUFFER_SIZE 1024 
-#define SIGMA_gyro 0.135
-#define LIMIT 3.0   
+#define SERVER_PORT 12345//порт
+#define SERVER_IP "127.0.0.1"//ip
+#define MAX_BUFFER_SIZE 1024 //максимальное значение
+#define SIGMA_gyro 0.135//значение сигма для генерации
+#define LIMIT 3.0   //ограничения дипозона 
 
-void send_array_gyro(double *array, size_t size, const char *host)
+void send_gyro(double *array, size_t size, const char *host)//отправка слуяайный значения для отрисовка графика по udp
 {
     int sock;
     struct sockaddr_in server_addr;
@@ -41,7 +41,7 @@ void send_array_gyro(double *array, size_t size, const char *host)
     close(sock);
 }
 
-void generate_normal_distribution_gyro(double *values, int n)
+void generate_normal_gyro(double *values, int n)//генерация случайных значений нормальным распределением
 {
     int i = 0;
     while (i < n)
@@ -66,61 +66,82 @@ void generate_normal_distribution_gyro(double *values, int n)
     }
 }
 
-// float model_fly(double *roll,double *pitch,double *yaw)
+// float model_fly(double *roll,double *pitch,double *yaw) //не нужное
 // {
 //     *roll=0.0;//крен ось X
 //     *pitch=0.0;//тангаж ось Y       C/sec
 //     *yaw=0.0;//рысканье ось Z 
 // }
 
-double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SAMPLES,double *data_roll,double *data_pitch,double * data_yaw)
+double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SAMPLES,double *data_roll,double *data_pitch,double * data_yaw)//главная функция
 {
     srand(time(NULL));
-    double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));
+    double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для сл значений
     if (values == NULL) 
     {
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }
-    generate_normal_distribution_gyro(values, NUM_SAMPLES);
+    generate_normal_gyro(values, NUM_SAMPLES);
     double Roll=roll;
-    double Pitch=pitch;
+    double Pitch=pitch;     //для того чтобы основное число не менялось, а менялся только шум
     double Yaw=yaw;
-    for(int i=0;i<NUM_SAMPLES;i++)
+    if(time_request==0)
     {
-        roll+=values[i];
-        pitch+=values[i];
-        yaw+=values[i];
-        *data_roll=roll;
-        *data_pitch=pitch;
-        *data_yaw=yaw;
-        sqlite3 *db;
-        char *err_msg=0;
-        int rc=sqlite3_open("Logs.db",&db);
-        if(rc !=SQLITE_OK)
-        {
+        *data_roll+=values[0];
+        *data_pitch+=values[33];
+        *data_yaw+=values[65];
+    }
+    else if(time_request==1)
+    {
+        *data_roll+=values[1];
+        *data_pitch+=values[43];
+        *data_yaw+=values[86];
+    }
+    else if (time_request==2)
+    {
+        *data_roll+=values[3];
+        *data_pitch+=values[21];
+        *data_yaw+=values[62];
+    }
+    else
+    {
+        for(int i=0;i<time_request;i++)
+        {        
+            roll+=values[i];
+            pitch+=values[i-1];
+            yaw+=values[i-2];
+            *data_roll=roll;
+            *data_pitch=pitch;
+            *data_yaw=yaw;        
+            roll=Roll;
+            pitch=Pitch;
+            yaw=Yaw;
+        }
+    }
+    sqlite3 *db;//запись в бд
+    char *err_msg=0;
+    int rc=sqlite3_open("Logs.db",&db);
+    if(rc !=SQLITE_OK)
+    {
+    sqlite3_close(db);
+    return 1;
+    }   
+    char sql[256];
+    snprintf(sql, sizeof(sql), "INSERT INTO Gyroscopes VALUES (%d,%f,%f,%f)", time_request, *data_roll, *data_pitch, *data_yaw);
+    rc=sqlite3_exec(db,sql,0,0,&err_msg);
+    if(rc!=SQLITE_OK)
+    {
+        printf ("SQL error: %s\n",err_msg);
+        sqlite3_free(err_msg);
         sqlite3_close(db);
         return 1;
-        }   
-        char sql[256];
-        snprintf(sql, sizeof(sql), "INSERT INTO Gyroscopes VALUES (%d,%f,%f,%f)", time_request, roll, pitch, yaw);
-        rc=sqlite3_exec(db,sql,0,0,&err_msg);
-        if(rc!=SQLITE_OK)
-        {
-            printf ("SQL error: %s\n",err_msg);
-            sqlite3_free(err_msg);
-            sqlite3_close(db);
-            return 1;
-        }
-        sqlite3_close(db);
-        roll=Roll;
-        pitch=Pitch;
-        yaw=Yaw;
     }
+    sqlite3_close(db);
     // size_t size=NUM_SAMPLES;
     // if(size==NUM_SAMPLES)
     // {
-    //     send_array_gyro(values,size,SERVER_IP);
+    //     send_gyro(values,size,SERVER_IP);
     //     printf("%s","Отправлено\n");
     // }
     // else

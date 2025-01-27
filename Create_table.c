@@ -11,7 +11,7 @@ int main(){
         return 1;
     }
     char *accel="DROP TABLE IF EXISTS Accelerometrs;"
-            "CREATE TABLE Accelerometrs(Time int,X_axis_acceleration float,Y_axis_acceleration float,Z_axis_acceleration float);";
+            "CREATE TABLE Accelerometrs(Time int,X_axis_speed float,Y_axis_speed float,Z_axis_speed float);";
     char *bar="DROP TABLE IF EXISTS Barometr;"
             "CREATE TABLE Barometr(Time int,real_height float,real_height_mbar float,data_bar float);";
     char *gyro="DROP TABLE IF EXISTS Gyroscopes;"
@@ -19,7 +19,7 @@ int main(){
     char *mag="DROP TABLE IF EXISTS Magnetometer;"
             "CREATE TABLE Magnetometer(Time int,X float,Y float,Z float);";      
     char *model="DROP TABLE IF EXISTS model_flight;"
-            "CREATE TABLE model_flight(Time int,Roll float,Pitch float,Yaw float,X_axis_acceleration float,Y_axis_acceleration float,Z_axis_acceleration float,X float,Y float,Z float,Height float);";
+            "CREATE TABLE model_flight(Time int,Longitude float,Latitude float,Roll float,Pitch float,Yaw float,X_axis_acceleration float,Y_axis_acceleration float,Z_axis_acceleration float,X float,Y float,Z float,Height float);";
     rc=sqlite3_exec(db,accel,0,0,&err_msg);
     if(rc !=SQLITE_OK)
     {

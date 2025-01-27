@@ -7,13 +7,13 @@
 #include <unistd.h>
 #include <sqlite3.h>
 
-#define SERVER_PORT 12345
-#define SERVER_IP "127.0.0.1"
-#define MAX_BUFFER_SIZE 1024 
-#define SIGMA_bar 0.025 
-#define LIMIT 3.0   
+#define SERVER_PORT 12345//порт
+#define SERVER_IP "127.0.0.1"//ip
+#define MAX_BUFFER_SIZE 1024 //максимальное значение
+#define SIGMA_bar 0.025 //значение сигма для генерации
+#define LIMIT 3.0   //ограничение диапозона
 
-void send_array_bar(double *array, size_t size, const char *host)
+void send_bar(double *array, size_t size, const char *host)//отправка слуяайный значения для отрисовка графика по udp
 {
     int sock;
     struct sockaddr_in server_addr;
@@ -46,7 +46,7 @@ void send_array_bar(double *array, size_t size, const char *host)
     close(sock);
 }
 
-void generate_normal_distribution_bar(double *values, int n)
+void generate_normal_bar(double *values, int n)//генерация случайных значений нормальным распределением
 {
     int i = 0;
     while (i < n)
@@ -74,63 +74,62 @@ void generate_normal_distribution_bar(double *values, int n)
     }
 }
 
-// double model_fly()
+// double model_fly()//не нужное
 // {
 //     double h=1000;
 //     return h;
 // }
 
-double data_bar(double h,double sys_er, int time_request,int NUM_SAMPLES)
+double data_bar(double h,double sys_er, int time_request,int NUM_SAMPLES)//главная функция
 {        
     srand(time(NULL));
-    double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));
-    double *Bar = (double *)malloc(NUM_SAMPLES * sizeof(double));
-    if (values == NULL || Bar==NULL) 
+    double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для сл значений
+    // double *Bar = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для отправки итоговых значений для графика
+    if (values == NULL ) 
     {
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }
-    generate_normal_distribution_bar(values, NUM_SAMPLES);
+    generate_normal_bar(values, NUM_SAMPLES);
     double real_h=h;
     double P;
     double p;
-    const double P_0=1013.25;
-    const int H=8400;
+    const double P_0=1013.25;//давление на станадартной высоте в милибарах
+    const int H=8400;//стандартная высота
     double stepen=real_h/8400;
     double e=exp(-stepen);
-    P=P_0*e;
+    P=P_0*e;//перевод в милибары
     p=P;
     double data_request;
-    P+=sys_er; 
-    for(int i=0;i<NUM_SAMPLES;i++)
+    P+=sys_er; //добавление системной ошибки
+    for(int i=0;i<time_request;i++)
     {
         P+=values[i];
-        Bar[i]=P;
-        sqlite3 *db;
-        char *err_msg=0;
-        int rc=sqlite3_open("Logs.db",&db);
-        if(rc !=SQLITE_OK)
-        {
+        data_request=P; 
+    }
+    sqlite3 *db;//запись в бд
+    char *err_msg=0;
+    int rc=sqlite3_open("Logs.db",&db);
+    if(rc !=SQLITE_OK)
+    {
+    sqlite3_close(db);
+    return 1;
+    }   
+    char sql[256];
+    snprintf(sql, sizeof(sql), "INSERT INTO Barometr VALUES (%d,%f,%f,%f);", time_request, real_h, p, P);
+    rc=sqlite3_exec(db,sql,0,0,&err_msg);
+    if(rc!=SQLITE_OK)
+    {
+        printf ("SQL error: %s\n",err_msg);
+        sqlite3_free(err_msg);
         sqlite3_close(db);
         return 1;
-        }   
-        char sql[256];
-        snprintf(sql, sizeof(sql), "INSERT INTO Barometr VALUES (%d,%f,%f,%f)", time_request, real_h, p, P);
-        rc=sqlite3_exec(db,sql,0,0,&err_msg);
-        if(rc!=SQLITE_OK)
-        {
-            printf ("SQL error: %s\n",err_msg);
-            sqlite3_free(err_msg);
-            sqlite3_close(db);
-            return 1;
-        }
-        sqlite3_close(db);
-        data_request=P;
     }
+    sqlite3_close(db);
     // size_t size=NUM_SAMPLES;
     // if(size==NUM_SAMPLES)
     // {
-    //     send_array_bar(Bar,size,SERVER_IP);
+    //     send_bar(values,size,SERVER_IP);
     //     printf("%s","Отправлено\n");
     // }
     // else

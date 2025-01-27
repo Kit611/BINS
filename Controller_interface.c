@@ -9,7 +9,7 @@
 
 #define NUM_SAMPLES 1
 
-int data_bd(int time_request,int *time,double *roll,double *pitch,double *yaw,double *X_axis_acceleration,double * Y_axis_acceleration,double *Z_axis_acceleration,double *x,double *y,double *z,double *h)
+int data_bd(int time_request,int *time,double *roll,double *pitch,double *yaw,double *X_axis_acceleration,double * Y_axis_acceleration,double *Z_axis_acceleration,double *x,double *y,double *z,double *h)//получение данных из бд
 {
 sqlite3 *db;
     sqlite3_stmt *res;
@@ -49,29 +49,29 @@ sqlite3 *db;
 
 int main(void)
 {    
-    flight();
-    int time_request=0;
-    int time;
+    flight();//вызов модели полета
+    int time_request=0;//время запроса
+    int time;//время которое возвращается
     double roll,pitch,yaw;
     double Z_axis_acceleration,Y_axis_acceleration,X_axis_acceleration;
     double x,y,z;
     double h;
     double sys_er;
-    int work_time=get_time();
-    printf("Введите погрешность от -4.5 до 4.5: \n");
-    scanf("%lf",&sys_er);
-    printf("Время:\tГироскоп:\t\t\t\tАкселерометр:\t\t\t\tМагнетомерт:\t\t\t\tБарометр:\n");
+    int work_time=get_time();//время работы
+    printf("Введите погрешность от -4.5 до 4.5: ");
+    scanf("%lf",&sys_er);//ввод системной ошибки
+    printf("%-5s| %-37s | %-39s | %-45s | %s\n","Время:","Гироскоп:","Акселерометр:","Магнетомерт:","Барометр:");
     for(int i=0;i<work_time;i++)
     {
     data_bd(time_request,&time,&roll,&pitch,&yaw,&X_axis_acceleration,&Y_axis_acceleration,&Z_axis_acceleration,&x,&y,&z,&h);
     double data_roll,data_pitch,data_yaw;
-    data_gyro(roll,pitch,yaw,time_request,NUM_SAMPLES,&data_roll,&data_pitch,&data_yaw);
+    data_gyro(roll,pitch,yaw,time_request,work_time,&data_roll,&data_pitch,&data_yaw);
     double Y_axis,Z_axis,X_axis;
-    data_accel(Y_axis_acceleration,X_axis_acceleration,Z_axis_acceleration,time_request,NUM_SAMPLES,&Y_axis,&X_axis,&Z_axis);
+    data_accel(Y_axis_acceleration,X_axis_acceleration,Z_axis_acceleration,time_request,work_time,&Y_axis,&X_axis,&Z_axis);
     double data_xmG,data_ymG,data_zmG;
-    data_mag(x,y,z,time_request,NUM_SAMPLES,&data_xmG,&data_ymG,&data_zmG);
-    double bar=data_bar(h,sys_er,time_request,NUM_SAMPLES);
-    printf("%d|\t(%f;%f;%f)|\t\t(%f;%f;%f)|\t\t(%f;%f;%f)|\t\t%f\n",i,data_roll,data_pitch,data_yaw,X_axis,Y_axis,Z_axis,data_xmG,data_ymG,data_zmG,bar);
+    data_mag(x,y,z,time_request,work_time,&data_xmG,&data_ymG,&data_zmG);
+    double bar=data_bar(h,sys_er,time_request,work_time);
+    printf("%-5d | (%f;%f;%f) | (%f;%f;%f) | (%f;%f;%f) | %f\n",i,data_roll,data_pitch,data_yaw,X_axis,Y_axis,Z_axis,data_xmG,data_ymG,data_zmG,bar);
     time_request++;
     }    
     return 0;

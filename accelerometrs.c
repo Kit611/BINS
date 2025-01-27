@@ -7,13 +7,13 @@
 #include <unistd.h>
 #include <sqlite3.h>
 
-#define SERVER_PORT 12345
-#define SERVER_IP "127.0.0.1"
-#define MAX_BUFFER_SIZE 1024 
-#define SIGMA_accel 1.29
-#define LIMIT 3.0   
+#define SERVER_PORT 12345//порт
+#define SERVER_IP "127.0.0.1"//ip
+#define MAX_BUFFER_SIZE 1024 //максимальное значение
+#define SIGMA_accel 1.29//значение сигма для генерации
+#define LIMIT 3.0   //ограничения дипозона 
 
-void send_array_accel(double *array, size_t size, const char *host)
+void send_accel(double *array, size_t size, const char *host)//отправка слуяайный значения для отрисовка графика по udp
 {
     int sock;
     struct sockaddr_in server_addr;
@@ -41,7 +41,7 @@ void send_array_accel(double *array, size_t size, const char *host)
     close(sock);
 }
 
-void generate_normal_distribution_accel(double *values, int n)
+void generate_normal_accel(double *values, int n)//генерация случайных значений нормальным распределением
 {
     int i = 0;
     while (i < n)
@@ -66,62 +66,95 @@ void generate_normal_distribution_accel(double *values, int n)
     }
 }
 
-// double model_fly(double *Y_axis_acceleration, double *X_axis_acceleration,double *Z_axis_acceleration)
+double integrate(double acceleration, double t_start, double t_end) {//функция интегрирования дял получения скорости
+    double dt = t_end - t_start;
+    double initial_velocity = 0;
+    double final_velocity = initial_velocity + acceleration * dt;
+
+    return final_velocity;
+}
+
+// double model_fly(double *Y_axis_acceleration, double *X_axis_acceleration,double *Z_axis_acceleration)//не нужное
 // {
 //     *Y_axis_acceleration=0.0;//м/с^2 ось Y
 //     *X_axis_acceleration=0.0;// ось X
 //     *Z_axis_acceleration=9.81;//ось Z
 // }
 
-double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z_axis_acceleration,int time_request,int NUM_SAMPLES,double *Y_axis,double *X_axis,double *Z_axis)
+double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z_axis_acceleration,int time_request,int NUM_SAMPLES,double *Y_axis,double *X_axis,double *Z_axis)//главная функция
 {
     srand(time(NULL));
-    double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));
-    double *test = (double *)malloc(NUM_SAMPLES * sizeof(double));
+    double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для сл значений
+    //double *test = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для отправки итоговых значений для графика
     if (values == NULL) 
     {
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }
-    generate_normal_distribution_accel(values, NUM_SAMPLES);
-    double Z=Z_axis_acceleration;
-    double Y=Y_axis_acceleration;
-    double X=X_axis_acceleration;
-    for(int i=0;i<NUM_SAMPLES;i++){
-        Y_axis_acceleration+=values[i];
-        X_axis_acceleration+=values[i];
-        Z_axis_acceleration+=values[i];
-        test[i]=Z_axis_acceleration;    
-        *Y_axis=Y_axis_acceleration;
-        *X_axis=X_axis_acceleration;
-        *Z_axis=Z_axis_acceleration;
-        sqlite3 *db;
-        char *err_msg=0;
-        int rc=sqlite3_open("Logs.db",&db);
-        if(rc !=SQLITE_OK)
-        {
+    generate_normal_accel(values, NUM_SAMPLES);
+    double Z=integrate(Z_axis_acceleration,time_request-1,time_request);
+    double Y=integrate(Y_axis_acceleration,time_request-1,time_request);//преобразование в скорость
+    double X=integrate(X_axis_acceleration,time_request-1,time_request);
+    double x=X;
+    double y=Y;//для того чтобы основное число не менялось, а менялся только шум
+    double z=Z;
+    if(time_request==0)
+    {
+        *X_axis=values[0];
+        *Y_axis=values[78];
+        *Z_axis=values[22];
+    }
+    else if(time_request ==1)
+    {
+        *X_axis=values[1];
+        *Y_axis=values[44];
+        *Z_axis=values[43];
+    }
+    else if(time_request ==2)
+    {
+        *X_axis=values[2];
+        *Y_axis=values[87];
+        *Z_axis=values[91];
+    }
+    else
+    {
+        for(int i=0;i<time_request;i++)
+        {        
+            Y+=values[i];
+            X+=values[i-1];
+            Z+=values[i-2];
+            // test[i]=Z_axis_acceleration;    
+            *Y_axis=Y;
+            *X_axis=X;
+            *Z_axis=Z;        
+            Z=z;
+            Y=y;
+            X=x;
+        }
+    }
+    sqlite3 *db;//запись в бд
+    char *err_msg=0;
+    int rc=sqlite3_open("Logs.db",&db);
+    if(rc !=SQLITE_OK)
+    {
+    sqlite3_close(db);
+    return 1;
+    }   
+    char sql[256];
+    snprintf(sql, sizeof(sql), "INSERT INTO Accelerometrs VALUES (%d,%f,%f,%f)", time_request, *X_axis, *Y_axis, *Z_axis);
+    rc=sqlite3_exec(db,sql,0,0,&err_msg);
+    if(rc!=SQLITE_OK)
+    {
+        printf ("SQL error: %s\n",err_msg);
+        sqlite3_free(err_msg);
         sqlite3_close(db);
         return 1;
-        }   
-        char sql[256];
-        snprintf(sql, sizeof(sql), "INSERT INTO Accelerometrs VALUES (%d,%f,%f,%f)", time_request, X_axis_acceleration, Y_axis_acceleration, Z_axis_acceleration);
-        rc=sqlite3_exec(db,sql,0,0,&err_msg);
-        if(rc!=SQLITE_OK)
-        {
-            printf ("SQL error: %s\n",err_msg);
-            sqlite3_free(err_msg);
-            sqlite3_close(db);
-            return 1;
-        }
-        sqlite3_close(db);
-        Z_axis_acceleration=Z;
-        Y_axis_acceleration=Y;
-        X_axis_acceleration=X;
     }
+    sqlite3_close(db);
     // size_t size=NUM_SAMPLES;
     // if(size==NUM_SAMPLES)
     // {
-    //     send_array_accel(values,size,SERVER_IP);
+    //     send_accel(values,size,SERVER_IP);
     //     printf("%s","Отправлено\n");
     // }
     // else
