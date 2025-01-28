@@ -13,7 +13,7 @@
 #define SIGMA_bar 0.025 //значение сигма для генерации
 #define LIMIT 3.0   //ограничение диапозона
 
-void send_bar(double *array, size_t size, const char *host)//отправка слуяайный значения для отрисовка графика по udp
+void send_bar(double *array, size_t size, const char *host)//отправка случайных значений для отрисовки графика по udp
 {
     int sock;
     struct sockaddr_in server_addr;
@@ -116,7 +116,7 @@ double data_bar(double h,double sys_er, int time_request,int NUM_SAMPLES)//гл�
     return 1;
     }   
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO Barometr VALUES (%d,%f,%f,%f);", time_request, real_h, p, P);
+    snprintf(sql, sizeof(sql), "INSERT INTO Barometr VALUES (%d,%f,%f,%f);", time_request, real_h, p, P);//давление в милибарах с шумом
     rc=sqlite3_exec(db,sql,0,0,&err_msg);
     if(rc!=SQLITE_OK)
     {

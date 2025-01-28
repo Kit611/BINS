@@ -13,7 +13,7 @@
 #define SIGMA_accel 1.29//значение сигма для генерации
 #define LIMIT 3.0   //ограничения дипозона 
 
-void send_accel(double *array, size_t size, const char *host)//отправка слуяайный значения для отрисовка графика по udp
+void send_accel(double *array, size_t size, const char *host)//отправка случайных значений для отрисовки графика по udp
 {
     int sock;
     struct sockaddr_in server_addr;
@@ -141,7 +141,7 @@ double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z
     return 1;
     }   
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO Accelerometrs VALUES (%d,%f,%f,%f)", time_request, *X_axis, *Y_axis, *Z_axis);
+    snprintf(sql, sizeof(sql), "INSERT INTO Accelerometrs VALUES (%d,%f,%f,%f)", time_request, *X_axis, *Y_axis, *Z_axis);//скорось по трем осям
     rc=sqlite3_exec(db,sql,0,0,&err_msg);
     if(rc!=SQLITE_OK)
     {

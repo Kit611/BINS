@@ -13,7 +13,7 @@
 #define SIGMA_mag 0.22//значение сигма для генерации
 #define LIMIT 3.0   //ограничение диапозона
 
-void send_mag(double *array, size_t size, const char *host)//отправка слуяайный значения для отрисовка графика по udp
+void send_mag(double *array, size_t size, const char *host)//отправка случайных значений для отрисовки графика по udp
 {
     int sock;
     struct sockaddr_in server_addr;
@@ -66,6 +66,12 @@ void generate_normal_mag(double *values, int n)//генерация случай
     }
 }
 
+double Course(double bx,double by,double *B_hor,double *azimut)//определение азимута и направление в горизонтальной плоскости
+{
+    *B_hor=sqrt(pow(bx,2)+pow(by,2));
+    *azimut=atan2(by,bx);
+}
+
 // float model_fly(double *x,double *y,double *z)//не нужное
 // {
 //     *x=0;
@@ -73,7 +79,7 @@ void generate_normal_mag(double *values, int n)//генерация случай
 //     *z=0;
 // }
 
-double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,double *data_xmG,double *data_ymG,double *data_zmG)//главная фукнция
+double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,double lon,double lat,double *data_x,double *data_y,double *data_z)//главная фукнция
 {
     srand(time(NULL));
     double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для сл значений
@@ -83,45 +89,44 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
         return 1;
     }    
     generate_normal_mag(values, NUM_SAMPLES);
-    double x_mG=x*1000;
-    double y_mG=y*1000; //перевод в милигаусс
-    double z_mG=z*1000;
-    double X=x_mG;
-    double Y=y_mG;//для того чтобы основное число не менялось, а менялся только шум
-    double Z=z_mG;
+    double B_hor,azimut;//горизонтальный курс и азимут
+    double X=x;
+    double Y=y;//для того чтобы основное число не менялось, а менялся только шум
+    double Z=z;
     if(time_request==0)
     {
-        *data_xmG=values[0];
-        *data_ymG=values[45];
-        *data_zmG=values[56];
+        *data_x=values[0];
+        *data_y=values[45];
+        *data_z=values[56];
     }
     else if(time_request ==1)
     {
-        *data_xmG=values[1];
-        *data_ymG=values[12];
-        *data_zmG=values[76];
+        *data_x=values[1];
+        *data_y=values[12];
+        *data_z=values[76];
     }
     else if(time_request ==2)
     {
-        *data_xmG=values[2];
-        *data_ymG=values[48];
-        *data_zmG=values[98];
+        *data_x=values[2];
+        *data_y=values[48];
+        *data_z=values[98];
     }
     else
     {
         for(int i=0;i<time_request;i++)
         {        
-            x_mG+=values[i];
-            y_mG+=values[i-1];
-            z_mG+=values[i-2];
-            *data_xmG=x_mG;
-            *data_ymG=y_mG;
-            *data_zmG=z_mG;        
-            x_mG=X;
-            y_mG=Y;
-            z_mG=Z;
+            x+=values[i];
+            y+=values[i-1];
+            z+=values[i-2];
+            *data_x=x;
+            *data_y=y;
+            *data_z=z;        
+            x=X;
+            y=Y;
+            z=Z;
         }
     }
+    Course(*data_x,*data_y,&B_hor,&azimut);
     sqlite3 *db;//запись в бд
     char *err_msg=0;
     int rc=sqlite3_open("Logs.db",&db);
@@ -131,7 +136,7 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
     return 1;
     }   
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO Magnetometer VALUES (%d,%f,%f,%f)", time_request, x_mG, y_mG, z_mG);
+    snprintf(sql, sizeof(sql), "INSERT INTO Magnetometer VALUES (%d,%f,%f,%f,%f,%f)", time_request, *data_x, *data_y, *data_z,B_hor,azimut);//значения магнетометра с шумом и выше
     rc=sqlite3_exec(db,sql,0,0,&err_msg);
     if(rc!=SQLITE_OK)
     {

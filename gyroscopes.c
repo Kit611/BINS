@@ -13,7 +13,7 @@
 #define SIGMA_gyro 0.135//значение сигма для генерации
 #define LIMIT 3.0   //ограничения дипозона 
 
-void send_gyro(double *array, size_t size, const char *host)//отправка слуяайный значения для отрисовка графика по udp
+void send_gyro(double *array, size_t size, const char *host)//отправка случайных значений для отрисовки графика по udp
 {
     int sock;
     struct sockaddr_in server_addr;
@@ -128,7 +128,7 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
     return 1;
     }   
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO Gyroscopes VALUES (%d,%f,%f,%f)", time_request, *data_roll, *data_pitch, *data_yaw);
+    snprintf(sql, sizeof(sql), "INSERT INTO Gyroscopes VALUES (%d,%f,%f,%f)", time_request, *data_roll, *data_pitch, *data_yaw);//угол наклона
     rc=sqlite3_exec(db,sql,0,0,&err_msg);
     if(rc!=SQLITE_OK)
     {
