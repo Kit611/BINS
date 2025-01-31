@@ -66,18 +66,22 @@ void generate_normal_mag(double *values, int n)//генерация случай
     }
 }
 
-double Course(double bx,double by,double *B_hor,double *azimut)//определение азимута и направление в горизонтальной плоскости
-{
-    *B_hor=sqrt(pow(bx,2)+pow(by,2));
-    *azimut=atan2(by,bx);
+// Функция для вычисления магнитного склонения
+double calculate_declination(double mx, double my) {
+    double declination = atan2(my, mx);
+    return declination * (180.0 / M_PI); // Возвращаем угол склонения в градусах
 }
 
-// float model_fly(double *x,double *y,double *z)//не нужное
-// {
-//     *x=0;
-//     *y=0; //gauss
-//     *z=0;
-// }
+// Функция для вычисления магнитного наклонения
+double calculate_inclination(double mx, double my, double mz) {
+    double inclination = atan2(mz, sqrt(mx * mx + my * my));
+    return inclination * (180.0 / M_PI); // Возвращаем угол наклонения в градусах
+}
+
+double mag_napr(double x,double y)
+{
+    return atan2(y,x);
+}
 
 double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,double lon,double lat,double *data_x,double *data_y,double *data_z)//главная фукнция
 {
@@ -88,11 +92,12 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }    
-    generate_normal_mag(values, NUM_SAMPLES);
-    double B_hor,azimut;//горизонтальный курс и азимут
-    double X=x;
-    double Y=y;//для того чтобы основное число не менялось, а менялся только шум
-    double Z=z;
+    double x_mG=x*10;
+    double y_mG=y*10;
+    double z_mG=z*10;
+    double X=x_mG;
+    double Y=y_mG;//для того чтобы основное число не менялось, а менялся только шум
+    double Z=z_mG;
     if(time_request==0)
     {
         *data_x=values[0];
@@ -115,18 +120,29 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
     {
         for(int i=0;i<time_request;i++)
         {        
-            x+=values[i];
-            y+=values[i-1];
-            z+=values[i-2];
-            *data_x=x;
-            *data_y=y;
-            *data_z=z;        
-            x=X;
-            y=Y;
-            z=Z;
+            x_mG+=values[i];
+            y_mG+=values[i-1];
+            z_mG+=values[i-2];
+            *data_x=x_mG;
+            *data_y=y_mG;
+            *data_z=z_mG;        
+            x_mG=X;
+            y_mG=Y;
+            z_mG=Z;
         }
     }
-    Course(*data_x,*data_y,&B_hor,&azimut);
+    double declination = calculate_declination(*data_x,*data_y);
+    double inclination = calculate_inclination(*data_x,*data_y,*data_z);
+    double angle_dir_grad=mag_napr(*data_x,*data_y);
+    double true_dir_grad;
+    if(declination>0)
+    {
+        true_dir_grad=angle_dir_grad+declination;
+    }
+    else
+    {
+        true_dir_grad=angle_dir_grad-declination;
+    }
     sqlite3 *db;//запись в бд
     char *err_msg=0;
     int rc=sqlite3_open("Logs.db",&db);
@@ -136,7 +152,7 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
     return 1;
     }   
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO Magnetometer VALUES (%d,%f,%f,%f,%f,%f)", time_request, *data_x, *data_y, *data_z,B_hor,azimut);//значения магнетометра с шумом и выше
+    snprintf(sql, sizeof(sql), "INSERT INTO Magnetometer VALUES (%d,%f,%f,%f,%f,%f,%f)", time_request, *data_x, *data_y, *data_z,declination,inclination,true_dir_grad);//значения магнетометра с шумом
     rc=sqlite3_exec(db,sql,0,0,&err_msg);
     if(rc!=SQLITE_OK)
     {

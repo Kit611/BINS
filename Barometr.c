@@ -74,12 +74,6 @@ void generate_normal_bar(double *values, int n)//генерация случай
     }
 }
 
-// double model_fly()//не нужное
-// {
-//     double h=1000;
-//     return h;
-// }
-
 double data_bar(double h,double sys_er, int time_request,int NUM_SAMPLES)//главная функция
 {        
     srand(time(NULL));

@@ -11,7 +11,7 @@
 
 int data_bd(int time_request,int *time,double *lon,double *lat,double *roll,double *pitch,double *yaw,double *X_axis_acceleration,double * Y_axis_acceleration,double *Z_axis_acceleration,double *x,double *y,double *z,double *h)//получение данных из бд
 {
-sqlite3 *db;
+    sqlite3 *db;
     sqlite3_stmt *res;
     int rc=sqlite3_open("Logs.db",&db);
     if(rc!=SQLITE_OK)
@@ -19,12 +19,13 @@ sqlite3 *db;
         sqlite3_close(db);
         return 1;
     }
-    char *sql="SELECT * FROM model_flight WHERE Time=?";
+    char *sql="SELECT * FROM model_flight WHERE Time_sek=?";
     rc =sqlite3_prepare_v2(db,sql,-1,&res,0);
     if(rc==SQLITE_OK)
     {
         sqlite3_bind_int(res,1,time_request);
-        while(sqlite3_step(res)==SQLITE_ROW){
+        while(sqlite3_step(res)==SQLITE_ROW)
+        {
             *time=sqlite3_column_int(res,0);            
             *roll=sqlite3_column_double(res,1);
             *pitch=sqlite3_column_double(res,2);
@@ -47,6 +48,11 @@ sqlite3 *db;
     return 0;
 }
 
+void write_bd()
+{
+    
+}
+
 int main(void)
 {    
     double lon,lat;
@@ -61,7 +67,7 @@ int main(void)
     int work_time=get_time();//время работы
     printf("Введите погрешность от -4.5 до 4.5: ");
     scanf("%lf",&sys_er);//ввод системной ошибки
-    printf("%-5s| %-37s | %-39s | %-45s | %s\n","Время:","Гироскоп:","Акселерометр:","Магнетомерт:","Барометр:");
+    printf("%-10s| %-42s | %-43s | %-40s | %s\n","Время(сек):","Гироскоп(град):","Акселерометр(g):","Магнетометер(mG):","Барометр(mbar):");
     for(int i=0;i<work_time;i++)
     {
     data_bd(time_request,&time,&lon,&lat,&roll,&pitch,&yaw,&X_axis_acceleration,&Y_axis_acceleration,&Z_axis_acceleration,&x,&y,&z,&h);
@@ -72,7 +78,7 @@ int main(void)
     double data_x,data_y,data_z;
     data_mag(x,y,z,time_request,work_time,lon,lat,&data_x,&data_y,&data_z);
     double bar=data_bar(h,sys_er,time_request,work_time);
-    printf("%-5d | (%f;%f;%f) | (%f;%f;%f) | (%f;%f;%f) | %f\n",i,data_roll,data_pitch,data_yaw,X_axis,Y_axis,Z_axis,data_x,data_y,data_z,bar);
+    printf("%-10d | (%f;%f;%f) | (%f;%f;%f) | (%f;%f;%f) | %f\n",i,data_roll,data_pitch,data_yaw,X_axis,Y_axis,Z_axis,data_x,data_y,data_z,bar);
     time_request++;
     }    
     return 0;

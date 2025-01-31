@@ -64,38 +64,60 @@
 //     return 0;
 // }
 #include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
 
-// Функция интегрирования для получения скорости из ускорения
-double integrate_acceleration_to_velocity(double acceleration, double t_start, double t_end) {
-    // Расчет времени
-    double dt = t_end - t_start;
+#define SAMPLE_COUNT 100
 
-    // Начальная скорость (можно изменить по необходимости)
-    double initial_velocity = 0; // Предположим, что начальная скорость равна 0
+typedef struct {
+    double mx; // Магнитное поле по оси X
+    double my; // Магнитное поле по оси Y
+    double mz; // Магнитное поле по оси Z
+} SensorData;
 
-    // Скорость = начальная скорость + ускорение * время
-    double final_velocity = initial_velocity + acceleration * dt;
+// Генерация данных магнетометра
+void simulate_magnetometer(double *x, double *y, double *z, int count) {
+    for (int i = 0; i < count; i++) {
+        double angle = (double)i / count * 2 * M_PI;
+        x[i] = cos(angle) * 50000; // 50000 nT
+        y[i] = sin(angle) * 50000; // 50000 nT
+        z[i] = 0.5 * cos(angle / 2) * 50000; // 50000 nT
+    }
+}
 
-    return final_velocity;
+// Функция для вычисления магнитного склонения
+double calculate_declination(double mx, double my) {
+    double declination = atan2(my, mx);
+    return declination * (180.0 / M_PI); // Возвращаем угол склонения в градусах
+}
+
+// Функция для вычисления магнитного наклонения
+double calculate_inclination(double mx, double my, double mz) {
+    double inclination = atan2(mz, sqrt(mx * mx + my * my));
+    return inclination * (180.0 / M_PI); // Возвращаем угол наклонения в градусах
 }
 
 int main() {
-    double acceleration;
-    double t_start, t_end;
+    SensorData data[SAMPLE_COUNT];
+    double mx[SAMPLE_COUNT], my[SAMPLE_COUNT], mz[SAMPLE_COUNT];
 
-    // Запрашиваем у пользователя значение ускорения и временные точки
-    printf("Введите значение ускорения: ");
-    scanf("%lf", &acceleration);
-    printf("Введите начальное время (t_start): ");
-    scanf("%lf", &t_start);
-    printf("Введите конечное время (t_end): ");
-    scanf("%lf", &t_end);
+    // Генерация данных
+    simulate_magnetometer(mx, my, mz, SAMPLE_COUNT);
 
-    // Вызываем функцию интегрирования
-    double final_velocity = integrate_acceleration_to_velocity(acceleration, t_start, t_end);
+    // Заполнение структуры данных
+    for (int i = 0; i < SAMPLE_COUNT; i++) {
+        data[i].mx = mx[i];
+        data[i].my = my[i];
+        data[i].mz = mz[i];
+    }
 
-    // Выводим результат
-    printf("Конечная скорость: %.6f\n", final_velocity);
+    // Вычисление и вывод магнитного склонения и наклонения
+    for (int i = 0; i < SAMPLE_COUNT; i++) {
+        double declination = calculate_declination(data[i].mx, data[i].my);
+        double inclination = calculate_inclination(data[i].mx, data[i].my, data[i].mz);
+        printf("Data %d: M(%f, %f, %f), Declination: %f degrees, Inclination: %f degrees\n", 
+               i, data[i].mx, data[i].my, data[i].mz, declination, inclination);
+    }
 
     return 0;
 }

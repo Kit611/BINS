@@ -66,13 +66,6 @@ void generate_normal_gyro(double *values, int n)//генерация случа�
     }
 }
 
-// float model_fly(double *roll,double *pitch,double *yaw) //не нужное
-// {
-//     *roll=0.0;//крен ось X
-//     *pitch=0.0;//тангаж ось Y       C/sec
-//     *yaw=0.0;//рысканье ось Z 
-// }
-
 double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SAMPLES,double *data_roll,double *data_pitch,double * data_yaw)//главная функция
 {
     srand(time(NULL));

@@ -74,13 +74,6 @@ double integrate(double acceleration, double t_start, double t_end) {//функ�
     return final_velocity;
 }
 
-// double model_fly(double *Y_axis_acceleration, double *X_axis_acceleration,double *Z_axis_acceleration)//не нужное
-// {
-//     *Y_axis_acceleration=0.0;//м/с^2 ось Y
-//     *X_axis_acceleration=0.0;// ось X
-//     *Z_axis_acceleration=9.81;//ось Z
-// }
-
 double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z_axis_acceleration,int time_request,int NUM_SAMPLES,double *Y_axis,double *X_axis,double *Z_axis)//главная функция
 {
     srand(time(NULL));

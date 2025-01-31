@@ -6,49 +6,46 @@
 
 #define MAX_ALTITUDE 150.0//макисмальная высота
 #define LANDING_ALTITUDE 10.0//минимальная высота
-#define UT_TO_MG 10.0
 
 int work_time=0;//вермя работы
 
-void control_inputs(int i, int total_time, double altitude, 
-                    double *ax, double *ay, double *az, 
-                    double *gyro_x, double *gyro_y, double *gyro_z)//контроль и генерация значений для полета
+void control_inputs(int i, int total_time, double altitude,double *ax_m2_sek, double *ay_m2_sek, double *az_m2_sek, double *gyro_x_C_sec, double *gyro_y_C_sec, double *gyro_z_C_sec)//контроль и генерация значений для полета
 {
     if (i < total_time - 10 && altitude < MAX_ALTITUDE)//для акселерометра
     {        
-        *az = 3.0;
+        *az_m2_sek = 3.0;
     } else if (i < total_time - 10)
     {        
-        *az = 0.0;
-        *ay = 1.0;
+        *az_m2_sek = 0.0;
+        *ay_m2_sek = 1.0;
     } else if (altitude > LANDING_ALTITUDE)
     {   
-        *ay=-8.0;
-        *az = -3.0;
+        *ay_m2_sek=-8.0;
+        *az_m2_sek = -3.0;
     }
-    if(*gyro_y<30.0 && i<total_time-30)//для гироскопа
+    if(*gyro_y_C_sec<30.0 && i<total_time-30)//для гироскопа
     {
-        *gyro_x = 0.0;
-        *gyro_z = 0.0;
-        *gyro_y+=1;
+        *gyro_x_C_sec = 0.0;
+        *gyro_z_C_sec = 0.0;
+        *gyro_y_C_sec+=1;
     }
     else
     {
-        *gyro_y-=1;
+        *gyro_y_C_sec-=1;
     }
 }
 
 
 //генерация значений для магнетомерта
-void compute_magnetometer(double pitch, double B0, double *Bx, double *By, double *Bz)
+void generate_magnetometer(double *x_nT, double *y_nT, double *z_nT,int count)
 {
-    double pitch_rad = pitch * M_PI / 180.0;
-    *Bx = B0 * cos(pitch_rad);
-    *By = 0;
-    *Bz = B0 * sin(pitch_rad);
-    *Bx *= UT_TO_MG;
-    *By *= UT_TO_MG;
-    *Bz *= UT_TO_MG;
+    for(int i=0;i<count;i++)
+    {
+        double angle = (double)i / count * 2 * M_PI;
+        x_nT[i] = cos(angle);
+        y_nT[i] = sin(angle);
+        z_nT[i] = 0.5 * cos(angle / 2);
+    }
 }
 
 int get_time()//передача времени
@@ -64,38 +61,46 @@ int flight(double *lon,double *lat)
     *lon=30.26774253847127;
     *lat=59.802977330951;
     work_time=total_time;
-    double x = 0, y = 0, z = LANDING_ALTITUDE;
-    double vx = 0, vy = 0, vz = 0;
+    double x_m2_sek = 0, y_m2_sek = 0, z_m = LANDING_ALTITUDE;
+    double vx_m2_sek = 0, vy_m2_sek = 0, vz_m2_sek = 0;
     double roll = 0, pitch = 0, yaw = 0;
-    int ch=-3;
+    double *x_nT = (double *)malloc(total_time * sizeof(double));
+    double *y_nT = (double *)malloc(total_time * sizeof(double));
+    double *z_nT = (double *)malloc(total_time * sizeof(double));
+    if (x_nT == NULL || y_nT == NULL || z_nT == NULL) 
+    {
+        fprintf(stderr, "Ошибка выделения памяти\n");
+        return 1;
+    }
+    generate_magnetometer(x_nT,y_nT,z_nT,total_time);
     for (int i = 0; i <= total_time; i++)//работа со значениями и запись в БД
     {
-        double ax = 0, ay = 0, az = 0;
-        double gyro_x, gyro_y, gyro_z;
-        control_inputs(i, total_time, z, &ax, &ay, &az, &gyro_x, &gyro_y, &gyro_z);
-        vx += ax;
-        vy += ay;
-        vz += az;
-        x += vx;
-        y += vy;
-        z += vz;
-        if (z > MAX_ALTITUDE)
+        double ax_m2_sek = 0, ay_m2_sek = 0, az_m2_sek = 0;
+        double gyro_x_C_sec, gyro_y_C_sec, gyro_z_C_sec;
+        control_inputs(i, total_time, z_m, &ax_m2_sek, &ay_m2_sek, &az_m2_sek, &gyro_x_C_sec, &gyro_y_C_sec, &gyro_z_C_sec);
+        vx_m2_sek += ax_m2_sek;
+        vy_m2_sek += ay_m2_sek;
+        vz_m2_sek += az_m2_sek;
+        x_m2_sek += vx_m2_sek;
+        y_m2_sek += vy_m2_sek;
+        z_m += vz_m2_sek;
+        if (z_m > MAX_ALTITUDE)
         {
-            z = MAX_ALTITUDE;
-            vz = 0;
+            z_m = MAX_ALTITUDE;
+            vz_m2_sek = 0;
         } 
-        if (z < LANDING_ALTITUDE)
+        if (z_m < LANDING_ALTITUDE)
         {
-            z = LANDING_ALTITUDE;
-            vz = 0;
+            z_m = LANDING_ALTITUDE;
+            vz_m2_sek = 0;
         }
-        if(vy<0)
+        if(vy_m2_sek<0)
         {
-            vy=0;
+            vy_m2_sek=0;
         }
-        roll += gyro_x;
-        pitch = gyro_y;
-        yaw += gyro_z;
+        roll += gyro_x_C_sec;
+        pitch = gyro_y_C_sec;
+        yaw += gyro_z_C_sec;
         if(pitch>=30.0)
         {
             pitch--;
@@ -104,19 +109,16 @@ int flight(double *lon,double *lat)
         {
             pitch=0;
         }
-        double mx, my, mz;
-        double B0=50.0;
-        compute_magnetometer(pitch,B0,&mx,&my,&mz);
         sqlite3 *db;
         char *err_msg=0;
         int rc=sqlite3_open("Logs.db",&db);
         if(rc !=SQLITE_OK)
         {
-        sqlite3_close(db);
-        return 1;
+            sqlite3_close(db);
+            return 1;
         }   
         char sql[256];
-        snprintf(sql, sizeof(sql), "INSERT INTO model_flight VALUES (%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f)",i,roll, pitch, yaw,vx,vy,vz,mx,my,mz,z);
+        snprintf(sql, sizeof(sql), "INSERT INTO model_flight VALUES (%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f)",i,roll, pitch, yaw,vx_m2_sek,vy_m2_sek,vz_m2_sek,x_nT[i],y_nT[i],z_nT[i],z_m);
         rc=sqlite3_exec(db,sql,0,0,&err_msg);
         if(rc!=SQLITE_OK)
         {
@@ -127,5 +129,8 @@ int flight(double *lon,double *lat)
         }
         sqlite3_close(db);
     }
+    free(x_nT);
+    free(y_nT);
+    free(z_nT);
     return 0;
 }
