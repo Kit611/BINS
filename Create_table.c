@@ -20,7 +20,7 @@ int main(){
             "CREATE TABLE Magnetometer(Time_sek int,X_mG float,Y_mG float,Z_mG float,Declination_grad float,Inclination_grad float,True_direction_grad float);";      
     char *model="DROP TABLE IF EXISTS model_flight;"
             "CREATE TABLE model_flight(Time_sek int,Roll_gradsek float,Pitch_gradsek float,Yaw_gradsek float,X_axis_acceleration_m2sek float,Y_axis_acceleration_m2Sek float,Z_axis_acceleration_m2sek float,X_nT float,Y_nT float,Z_nT float,Height_m float);";
-    char *finish="DROP TABLE IF EXISTS model_flight;"
+    char *finish="DROP TABLE IF EXISTS finish_data;"
             "CREATE TABLE finish_data(Time_sek int,Roll_gradsek float,Pitch_gradsek float,Yaw_gradsek float,X_speed_msek float,Y_speed_msek float,Z_speed_msek float,x_mG float,y_mG float,z_mG float,Height_mbar float);";
     rc=sqlite3_exec(db,accel,0,0,&err_msg);
     if(rc !=SQLITE_OK)

@@ -48,9 +48,28 @@ int data_bd(int time_request,int *time,double *lon,double *lat,double *roll,doub
     return 0;
 }
 
-void write_bd()
+int write_bd(int time,double roll,double pitch,double yaw,double X_axis,double Y_axis,double Z_axis,double x,double y,double z,double h)
 {
-    
+    sqlite3 *db;
+    char *err_msg=0;
+    int rc=sqlite3_open("Logs.db",&db);
+    if(rc!=SQLITE_OK)
+    {
+        sqlite3_close(db);
+        return 1;
+    }
+    char sql[256];
+    snprintf(sql, sizeof(sql), "INSERT INTO finish_data VALUES (%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f)",time,roll,pitch,yaw,X_axis,Y_axis,Z_axis,x, y,z,h);
+    rc=sqlite3_exec(db,sql,0,0,&err_msg);
+    if(rc!=SQLITE_OK)
+    {
+        printf ("SQL error: %s\n",err_msg);
+        sqlite3_free(err_msg);
+        sqlite3_close(db);
+        return 1;
+    }
+    sqlite3_close(db);
+    return 0;
 }
 
 int main(void)
@@ -70,16 +89,17 @@ int main(void)
     printf("%-10s| %-42s | %-43s | %-40s | %s\n","Время(сек):","Гироскоп(град):","Акселерометр(g):","Магнетометер(mG):","Барометр(mbar):");
     for(int i=0;i<work_time;i++)
     {
-    data_bd(time_request,&time,&lon,&lat,&roll,&pitch,&yaw,&X_axis_acceleration,&Y_axis_acceleration,&Z_axis_acceleration,&x,&y,&z,&h);
-    double data_roll,data_pitch,data_yaw;
-    data_gyro(roll,pitch,yaw,time_request,work_time,&data_roll,&data_pitch,&data_yaw);
-    double Y_axis,Z_axis,X_axis;
-    data_accel(Y_axis_acceleration,X_axis_acceleration,Z_axis_acceleration,time_request,work_time,&Y_axis,&X_axis,&Z_axis);
-    double data_x,data_y,data_z;
-    data_mag(x,y,z,time_request,work_time,lon,lat,&data_x,&data_y,&data_z);
-    double bar=data_bar(h,sys_er,time_request,work_time);
-    printf("%-10d | (%f;%f;%f) | (%f;%f;%f) | (%f;%f;%f) | %f\n",i,data_roll,data_pitch,data_yaw,X_axis,Y_axis,Z_axis,data_x,data_y,data_z,bar);
-    time_request++;
+        data_bd(time_request,&time,&lon,&lat,&roll,&pitch,&yaw,&X_axis_acceleration,&Y_axis_acceleration,&Z_axis_acceleration,&x,&y,&z,&h);
+        double data_roll,data_pitch,data_yaw;
+        data_gyro(roll,pitch,yaw,time_request,work_time,&data_roll,&data_pitch,&data_yaw);
+        double Y_axis,Z_axis,X_axis;
+        data_accel(Y_axis_acceleration,X_axis_acceleration,Z_axis_acceleration,time_request,work_time,&Y_axis,&X_axis,&Z_axis);
+        double data_x,data_y,data_z;
+        data_mag(x,y,z,time_request,work_time,lon,lat,&data_x,&data_y,&data_z);
+        double bar=data_bar(h,sys_er,time_request,work_time);
+        printf("%-10d | (%f;%f;%f) | (%f;%f;%f) | (%f;%f;%f) | %f\n",i,data_roll,data_pitch,data_yaw,X_axis,Y_axis,Z_axis,data_x,data_y,data_z,bar);
+        time_request++;
+        write_bd(i,data_roll,data_pitch,data_yaw,X_axis,Y_axis,Z_axis,data_x,data_y,data_z,bar);
     }    
     return 0;
 }

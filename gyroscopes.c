@@ -12,6 +12,7 @@
 #define MAX_BUFFER_SIZE 1024 //максимальное значение
 #define SIGMA_gyro 0.135//значение сигма для генерации
 #define LIMIT 3.0   //ограничения дипозона 
+#define DT 1
 
 void send_gyro(double *array, size_t size, const char *host)//отправка случайных значений для отрисовки графика по udp
 {
@@ -66,6 +67,14 @@ void generate_normal_gyro(double *values, int n)//генерация случа�
     }
 }
 
+void integrade_angle(double *x_Csek,double *y_Csek,double *z_Csek,double Dt)
+{
+    double angle=0;
+    *x_Csek=angle+*x_Csek*Dt;
+    *y_Csek=angle+*y_Csek*Dt;
+    *z_Csek=angle+*z_Csek*Dt;
+}
+
 double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SAMPLES,double *data_roll,double *data_pitch,double * data_yaw)//главная функция
 {
     srand(time(NULL));
@@ -76,9 +85,13 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
         return 1;
     }
     generate_normal_gyro(values, NUM_SAMPLES);
-    double Roll=roll;
-    double Pitch=pitch;     //для того чтобы основное число не менялось, а менялся только шум
-    double Yaw=yaw;
+    double x_Csek=roll;
+    double y_Csek=pitch;
+    double z_Csek=yaw;
+    integrade_angle(&x_Csek,&y_Csek,&z_Csek,DT);
+    double Roll=x_Csek;
+    double Pitch=y_Csek;     //для того чтобы основное число не менялось, а менялся только шум
+    double Yaw=z_Csek;
     if(time_request==0)
     {
         *data_roll+=values[0];
@@ -101,15 +114,15 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
     {
         for(int i=0;i<time_request;i++)
         {        
-            roll+=values[i];
-            pitch+=values[i-1];
-            yaw+=values[i-2];
-            *data_roll=roll;
-            *data_pitch=pitch;
-            *data_yaw=yaw;        
-            roll=Roll;
-            pitch=Pitch;
-            yaw=Yaw;
+            x_Csek+=values[i];
+            y_Csek+=values[i-1];
+            z_Csek+=values[i-2];
+            *data_roll=x_Csek;
+            *data_pitch=y_Csek;
+            *data_yaw=z_Csek;        
+            x_Csek=Roll;
+            y_Csek=Pitch;
+            z_Csek=Yaw;
         }
     }
     sqlite3 *db;//запись в бд
