@@ -74,7 +74,7 @@ void generate_normal_bar(double *values, int n)//генерация случай
     }
 }
 
-double data_bar(double h,double sys_er, int time_request,int NUM_SAMPLES)//главная функция
+double data_bar(double h_m,double sys_er, int time_request,int NUM_SAMPLES)//главная функция
 {        
     srand(time(NULL));
     double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для сл значений
@@ -85,21 +85,21 @@ double data_bar(double h,double sys_er, int time_request,int NUM_SAMPLES)//гл�
         return 1;
     }
     generate_normal_bar(values, NUM_SAMPLES);
-    double real_h=h;
-    double P;
-    double p;
-    const double P_0=1013.25;//давление на станадартной высоте в милибарах
-    const int H=8400;//стандартная высота
-    double stepen=real_h/8400;
+    double real_h_m=h_m;
+    double P_mbar;
+    double p_mbar;
+    const double P_0_mbar=1013.25;//давление на станадартной высоте в милибарах
+    const int H_m=8400;//стандартная высота
+    double stepen=real_h_m/8400;
     double e=exp(-stepen);
-    P=P_0*e;//перевод в милибары
-    p=P;
-    double data_request;
-    P+=sys_er; //добавление системной ошибки
+    P_mbar=P_0_mbar*e;//перевод в милибары
+    p_mbar=P_mbar;
+    double data_request_mbar;
+    P_mbar+=sys_er; //добавление системной ошибки
     for(int i=0;i<time_request;i++)
     {
-        P+=values[i];
-        data_request=P; 
+        P_mbar+=values[i];
+        data_request_mbar=P_mbar; 
     }
     sqlite3 *db;//запись в бд
     char *err_msg=0;
@@ -110,7 +110,7 @@ double data_bar(double h,double sys_er, int time_request,int NUM_SAMPLES)//гл�
     return 1;
     }   
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO Barometr VALUES (%d,%f,%f,%f);", time_request, real_h, p, P);//давление в милибарах с шумом
+    snprintf(sql, sizeof(sql), "INSERT INTO Barometr VALUES (%d,%f,%f,%f);", time_request, real_h_m, p_mbar, P_mbar);//давление в милибарах с шумом
     rc=sqlite3_exec(db,sql,0,0,&err_msg);
     if(rc!=SQLITE_OK)
     {
@@ -131,5 +131,5 @@ double data_bar(double h,double sys_er, int time_request,int NUM_SAMPLES)//гл�
     //     printf("Количество элементов: %ld", size);
     // }
     free(values);
-    return data_request;
+    return data_request_mbar;
 }

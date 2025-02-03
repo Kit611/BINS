@@ -4,64 +4,98 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define max_height 150.0//макисмальная высота
-#define min_height 10.0//минимальная высота
-#define max_acceleration 176.58//максимальное ускорение
-#define min_acceleration -176.58//минимальное ускорение
-#define max_speed_angle 480.0//максильная угловая скорость
-#define min_speed_angle 450.0//минимальная угловая скорость
+#define max_height_m 150.0//макисмальная высота
+#define min_height_m 10.0//минимальная высота
+#define up_acceleration 0.4//максимальное ускорение набора высоты
+#define down_acceleration -0.3//максимальное ускорение снижения
+#define max_speed 13.0//максимальная скорость
+#define max_speed_angle 150//максильная угловая скорость
+#define min_speed_angle 30.0//минимальная угловая скорость
 
 int work_time=0;//вермя работы
 
-void generate_z_acceleration(int i, int total_time, double altitude,double *az_m2_sek)//генерация ускорения по оси Z
+void generate_height(int i, int total_time,double *h)
 {
-    if (i < total_time - 27 && altitude < max_height && *az_m2_sek<max_acceleration)//для набора ускорения для набора высоты
-    {      
-        *az_m2_sek = 3.0;
-    } else if (i < total_time - 27)
-    {        
-        *az_m2_sek = 0.0;
-    } else if (altitude > min_height && *az_m2_sek>min_acceleration)
-    {   
-        *az_m2_sek = -1.0;
-    }   
-}
-
-void generate_height(int i, int total_time, double altitude,double *az_m)
-{
-    if (i < total_time - 27 && altitude < max_height)//для набора высоты
-    {        
-        *az_m=3.0;
-    } else if (i < total_time - 27)
-    {        
-        *az_m = 0.0;
-    } else if (altitude > min_height)
-    {   
-        *az_m = -5.0;
+    if(i<3)
+    {
+        *h=min_height_m;
+    }
+    else if (i<total_time-10)
+    {
+        *h=max_height_m;
+    }
+    else
+    {
+        *h=min_height_m;
     }
 }
 
-void generate_accelerometr(int i, int total_time,double *ay_m2_sek)
+void generate_accelerometr(int i, int total_time,double *ax_m2_sec,double *ay_m2_sec,double *az_m2_sec)
 {
-    if (*ay_m2_sek < max_acceleration && i<total_time-21)//для движения вперед
-    {        
-        *ay_m2_sek = 1;
+    double t=total_time-33;
+    if(i<3)
+    {
+        *ax_m2_sec=0;
+        *ay_m2_sec=0;
+        *az_m2_sec=0;
     }
-    else if (*ay_m2_sek > min_acceleration)
-    {   
-        *ay_m2_sek = -8;
+    else if (i<13)
+    {
+        *ax_m2_sec=0;
+        *ay_m2_sec=0;
+        *az_m2_sec=up_acceleration;
+    }
+    else if (i<total_time-20)
+    {
+        *ax_m2_sec=0;
+        *ay_m2_sec=max_speed/t;
+        *az_m2_sec=0;
+    }
+    else if(i<total_time-10)
+    {
+        *ax_m2_sec=0;
+        *ay_m2_sec=0;
+        *az_m2_sec=down_acceleration;
+    }
+    else
+    {
+        *ax_m2_sec=0;
+        *ay_m2_sec=0;
+        *az_m2_sec=0;
     }
 }
 
-void generate_gyro(int i, int total_time, double *gyro_y_C_sec)
+void generate_gyro(int i, int total_time, double *gyro_x_C_sec,double *gyro_y_C_sec,double *gyro_z_C_sec)
 {
-    if (*gyro_y_C_sec < max_speed_angle && i<total_time-30)//для гироскопа и движения вперед
-    {        
-        *gyro_y_C_sec += 0.5;
-    } 
-     else
-    {   
-        *gyro_y_C_sec -= 1.0;
+    if(i<13)
+    {
+        *gyro_x_C_sec=0;
+        *gyro_y_C_sec=0;
+        *gyro_z_C_sec=0;
+    }  
+    else if (i<total_time-21)
+    {
+        *gyro_x_C_sec=0;
+        *gyro_y_C_sec=max_speed_angle;
+        *gyro_z_C_sec=0;
+    }
+    else if(i<total_time-20)
+    {
+        *gyro_x_C_sec=0;
+        *gyro_y_C_sec=0;
+        *gyro_z_C_sec=0;
+    }
+    else if(i<total_time-10)
+    {
+        *gyro_x_C_sec=0;
+        *gyro_y_C_sec=-max_speed_angle;
+        *gyro_z_C_sec=0;
+    }
+    else
+    {
+        *gyro_x_C_sec=0;
+        *gyro_y_C_sec=0;
+        *gyro_z_C_sec=0;
     }
 }
 
@@ -90,58 +124,24 @@ int flight(double *lon,double *lat)
     *lon=30.26774253847127;
     *lat=59.802977330951;
     work_time=total_time;
-    double x_m2_sek = 0, y_m2_sek = 0,z_m2_sek=0, z_m = min_height,az_m=min_height;
+    double ax_m2_sec,ay_m2_sec,az_m2_sec;
+    double gyro_x_C_sec,gyro_y_C_sec,gyro_z_C_sec;
+    double h_m;
+    double m_kg=0.249;
     double *x_nT = (double *)malloc(total_time * sizeof(double));
     double *y_nT = (double *)malloc(total_time * sizeof(double));
     double *z_nT = (double *)malloc(total_time * sizeof(double));
-    double roll = min_speed_angle, pitch = min_speed_angle, yaw = min_speed_angle;
-    double ax_m2_sek = 0, ay_m2_sek = 0, az_m2_sek = 0;
-    double gyro_x_C_sec=0, gyro_y_C_sec=450, gyro_z_C_sec=0;
     if (x_nT == NULL || y_nT == NULL || z_nT == NULL) 
     {
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }
-    generate_magnetometer(x_nT,y_nT,z_nT,total_time);
+    generate_magnetometer(x_nT,y_nT,z_nT,total_time);    
     for (int i = 0; i <= total_time; i++)//работа со значениями и запись в БД
     {
-        generate_z_acceleration(i, total_time, z_m,&az_m2_sek);
-        generate_height(i,total_time,z_m,&az_m);
-        generate_accelerometr(i,total_time,&ay_m2_sek);
-        generate_gyro(i,total_time,&gyro_y_C_sec);
-        x_m2_sek += ax_m2_sek;
-        y_m2_sek += ay_m2_sek;
-        z_m2_sek+=az_m2_sek;
-        z_m += az_m;
-        if (z_m > max_height)
-        {
-            z_m = max_height;
-            z_m2_sek = 0;
-        } 
-        if (z_m < min_height)
-        {
-            z_m = min_height;
-            z_m2_sek = 0;
-        }
-        if(y_m2_sek>=max_acceleration)
-        {
-            y_m2_sek--;
-        }
-        if(y_m2_sek<=0)
-        {
-            y_m2_sek=0;
-        }
-        roll += gyro_x_C_sec;
-        pitch = gyro_y_C_sec;
-        yaw += gyro_z_C_sec;
-        if(pitch>=max_speed_angle)
-        {
-            pitch--;
-        }
-        if(pitch<=min_speed_angle)
-        {
-            pitch=450;
-        }
+        generate_accelerometr(i,total_time,&ax_m2_sec,&ay_m2_sec,&az_m2_sec);
+        generate_gyro(i,total_time,&gyro_x_C_sec,&gyro_y_C_sec,&gyro_z_C_sec);
+        generate_height(i,total_time,&h_m);
         sqlite3 *db;
         char *err_msg=0;
         int rc=sqlite3_open("Logs.db",&db);
@@ -151,7 +151,7 @@ int flight(double *lon,double *lat)
             return 1;
         }   
         char sql[256];
-        snprintf(sql, sizeof(sql), "INSERT INTO model_flight VALUES (%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f)",i,roll, pitch, yaw,x_m2_sek,y_m2_sek,z_m2_sek,x_nT[i],y_nT[i],z_nT[i],z_m);
+        snprintf(sql, sizeof(sql), "INSERT INTO model_flight VALUES (%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f)",i,gyro_x_C_sec, gyro_y_C_sec, gyro_z_C_sec,ax_m2_sec,ay_m2_sec,az_m2_sec,x_nT[i],y_nT[i],z_nT[i],h_m);
         rc=sqlite3_exec(db,sql,0,0,&err_msg);
         if(rc!=SQLITE_OK)
         {

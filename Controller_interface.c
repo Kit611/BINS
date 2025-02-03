@@ -9,7 +9,7 @@
 
 #define NUM_SAMPLES 1
 
-int data_bd(int time_request,int *time,double *lon,double *lat,double *roll,double *pitch,double *yaw,double *X_axis_acceleration,double * Y_axis_acceleration,double *Z_axis_acceleration,double *x,double *y,double *z,double *h)//получение данных из бд
+int data_bd(int time_request,int *time,double *lon,double *lat,double *roll_C_sec,double *pitch_C_sec,double *yaw_C_sec,double *X_axis_acceleration_m2_sec,double * Y_axis_acceleration_m2_sec,double *Z_axis_acceleration_m2_sec,double *x_nT,double *y_nT,double *z_nT,double *h_m)//получение данных из бд
 {
     sqlite3 *db;
     sqlite3_stmt *res;
@@ -19,7 +19,7 @@ int data_bd(int time_request,int *time,double *lon,double *lat,double *roll,doub
         sqlite3_close(db);
         return 1;
     }
-    char *sql="SELECT * FROM model_flight WHERE Time_sek=?";
+    char *sql="SELECT * FROM model_flight WHERE Time_sec=?";
     rc =sqlite3_prepare_v2(db,sql,-1,&res,0);
     if(rc==SQLITE_OK)
     {
@@ -27,16 +27,16 @@ int data_bd(int time_request,int *time,double *lon,double *lat,double *roll,doub
         while(sqlite3_step(res)==SQLITE_ROW)
         {
             *time=sqlite3_column_int(res,0);            
-            *roll=sqlite3_column_double(res,1);
-            *pitch=sqlite3_column_double(res,2);
-            *yaw=sqlite3_column_double(res,3);
-            *X_axis_acceleration=sqlite3_column_double(res,4);
-            *Y_axis_acceleration=sqlite3_column_double(res,5);
-            *Z_axis_acceleration=sqlite3_column_double(res,6);
-            *x=sqlite3_column_double(res,7);
-            *y=sqlite3_column_double(res,8);
-            *z=sqlite3_column_double(res,9);
-            *h=sqlite3_column_double(res,10);
+            *roll_C_sec=sqlite3_column_double(res,1);
+            *pitch_C_sec=sqlite3_column_double(res,2);
+            *yaw_C_sec=sqlite3_column_double(res,3);
+            *X_axis_acceleration_m2_sec=sqlite3_column_double(res,4);
+            *Y_axis_acceleration_m2_sec=sqlite3_column_double(res,5);
+            *Z_axis_acceleration_m2_sec=sqlite3_column_double(res,6);
+            *x_nT=sqlite3_column_double(res,7);
+            *y_nT=sqlite3_column_double(res,8);
+            *z_nT=sqlite3_column_double(res,9);
+            *h_m=sqlite3_column_double(res,10);
         }
     }
     else
@@ -48,7 +48,7 @@ int data_bd(int time_request,int *time,double *lon,double *lat,double *roll,doub
     return 0;
 }
 
-int write_bd(int time,double roll,double pitch,double yaw,double X_axis,double Y_axis,double Z_axis,double x,double y,double z,double h)
+int write_bd(int time,double roll_grad,double pitch_grad,double yaw_grad,double X_axis_m_sec,double Y_axis_m_sec,double Z_axis_m_sec,double x_mG,double y_mG,double z_mG,double h_mbar)
 {
     sqlite3 *db;
     char *err_msg=0;
@@ -59,7 +59,7 @@ int write_bd(int time,double roll,double pitch,double yaw,double X_axis,double Y
         return 1;
     }
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO finish_data VALUES (%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f)",time,roll,pitch,yaw,X_axis,Y_axis,Z_axis,x, y,z,h);
+    snprintf(sql, sizeof(sql), "INSERT INTO finish_data VALUES (%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f)",time,roll_grad,pitch_grad,yaw_grad,X_axis_m_sec,Y_axis_m_sec,Z_axis_m_sec,x_mG, y_mG,z_mG,h_mbar);
     rc=sqlite3_exec(db,sql,0,0,&err_msg);
     if(rc!=SQLITE_OK)
     {
@@ -77,11 +77,11 @@ int main(void)
     double lon,lat;
     flight(&lon,&lat);//вызов модели полета
     int time_request=0;//время запроса
-    int time;//время которое возвращается
-    double roll,pitch,yaw;
-    double Z_axis_acceleration,Y_axis_acceleration,X_axis_acceleration;
-    double x,y,z;
-    double h;
+    int time_sec;//время которое возвращается
+    double roll_C_sec,pitch_C_sec,yaw_C_sec;
+    double Z_axis_acceleration_m2_sec,Y_axis_acceleration_m2_sec,X_axis_acceleration_m2_sec;
+    double x_nT,y_nT,z_nT;
+    double h_m;
     double sys_er;
     int work_time=get_time();//время работы
     printf("Введите погрешность от -4.5 до 4.5: ");
@@ -89,17 +89,17 @@ int main(void)
     printf("%-10s| %-42s | %-43s | %-40s | %s\n","Время(сек):","Гироскоп(град):","Акселерометр(g):","Магнетометер(mG):","Барометр(mbar):");
     for(int i=0;i<work_time;i++)
     {
-        data_bd(time_request,&time,&lon,&lat,&roll,&pitch,&yaw,&X_axis_acceleration,&Y_axis_acceleration,&Z_axis_acceleration,&x,&y,&z,&h);
-        double data_roll,data_pitch,data_yaw;
-        data_gyro(roll,pitch,yaw,time_request,work_time,&data_roll,&data_pitch,&data_yaw);
-        double Y_axis,Z_axis,X_axis;
-        data_accel(Y_axis_acceleration,X_axis_acceleration,Z_axis_acceleration,time_request,work_time,&Y_axis,&X_axis,&Z_axis);
-        double data_x,data_y,data_z;
-        data_mag(x,y,z,time_request,work_time,lon,lat,&data_x,&data_y,&data_z);
-        double bar=data_bar(h,sys_er,time_request,work_time);
-        printf("%-10d | (%f;%f;%f) | (%f;%f;%f) | (%f;%f;%f) | %f\n",i,data_roll,data_pitch,data_yaw,X_axis,Y_axis,Z_axis,data_x,data_y,data_z,bar);
+        data_bd(time_request,&time_sec,&lon,&lat,&roll_C_sec,&pitch_C_sec,&yaw_C_sec,&X_axis_acceleration_m2_sec,&Y_axis_acceleration_m2_sec,&Z_axis_acceleration_m2_sec,&x_nT,&y_nT,&z_nT,&h_m);
+        double data_roll_grad,data_pitch_grad,data_yaw_grad;
+        data_gyro(roll_C_sec,pitch_C_sec,yaw_C_sec,time_request,work_time,&data_roll_grad,&data_pitch_grad,&data_yaw_grad);
+        double Y_axis_m_sec,Z_axis_m_sec,X_axis_m_sec;
+        data_accel(Y_axis_acceleration_m2_sec,X_axis_acceleration_m2_sec,Z_axis_acceleration_m2_sec,time_request,work_time,&Y_axis_m_sec,&X_axis_m_sec,&Z_axis_m_sec);
+        double data_x_mG,data_y_mG,data_z_mG;
+        data_mag(x_nT,y_nT,z_nT,time_request,work_time,lon,lat,&data_x_mG,&data_y_mG,&data_z_mG);
+        double bar_mbar=data_bar(h_m,sys_er,time_request,work_time);
+        printf("%-10d | (%f;%f;%f) | (%f;%f;%f) | (%f;%f;%f) | %f\n",i,data_roll_grad,data_pitch_grad,data_yaw_grad,X_axis_m_sec,Y_axis_m_sec,Z_axis_m_sec,data_x_mG,data_y_mG,data_z_mG,bar_mbar);
         time_request++;
-        write_bd(i,data_roll,data_pitch,data_yaw,X_axis,Y_axis,Z_axis,data_x,data_y,data_z,bar);
+        write_bd(i,data_roll_grad,data_pitch_grad,data_yaw_grad,X_axis_m_sec,Y_axis_m_sec,Z_axis_m_sec,data_x_mG,data_y_mG,data_z_mG,bar_mbar);
     }    
     return 0;
 }

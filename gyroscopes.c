@@ -12,7 +12,6 @@
 #define MAX_BUFFER_SIZE 1024 //максимальное значение
 #define SIGMA_gyro 0.135//значение сигма для генерации
 #define LIMIT 3.0   //ограничения дипозона 
-#define DT 1
 
 void send_gyro(double *array, size_t size, const char *host)//отправка случайных значений для отрисовки графика по udp
 {
@@ -75,7 +74,7 @@ void integrade_angle(double *x_Csek,double *y_Csek,double *z_Csek,double Dt)
     *z_Csek=angle+*z_Csek*Dt;
 }
 
-double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SAMPLES,double *data_roll,double *data_pitch,double * data_yaw)//главная функция
+double data_gyro(double roll_Csec,double pitch_Csec,double yaw_Csek,int time_request,int NUM_SAMPLES,double *data_roll_grad,double *data_pitch_grad,double * data_yaw_grad)//главная функция
 {
     srand(time(NULL));
     double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для сл значений
@@ -85,30 +84,31 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
         return 1;
     }
     generate_normal_gyro(values, NUM_SAMPLES);
-    double x_Csek=roll;
-    double y_Csek=pitch;
-    double z_Csek=yaw;
+    double x_Csek=roll_Csec;
+    double y_Csek=pitch_Csec;
+    double z_Csek=yaw_Csek;
+    double DT=0.2;
     integrade_angle(&x_Csek,&y_Csek,&z_Csek,DT);
-    double Roll=x_Csek;
-    double Pitch=y_Csek;     //для того чтобы основное число не менялось, а менялся только шум
-    double Yaw=z_Csek;
+    double Roll_Csec=x_Csek;
+    double Pitch_Csec=y_Csek;     //для того чтобы основное число не менялось, а менялся только шум
+    double Yaw_Csec=z_Csek;
     if(time_request==0)
     {
-        *data_roll+=values[0];
-        *data_pitch+=values[33];
-        *data_yaw+=values[65];
+        *data_roll_grad+=values[0];
+        *data_pitch_grad+=values[33];
+        *data_yaw_grad+=values[65];
     }
     else if(time_request==1)
     {
-        *data_roll+=values[1];
-        *data_pitch+=values[43];
-        *data_yaw+=values[86];
+        *data_roll_grad+=values[1];
+        *data_pitch_grad+=values[43];
+        *data_yaw_grad+=values[86];
     }
     else if (time_request==2)
     {
-        *data_roll+=values[3];
-        *data_pitch+=values[21];
-        *data_yaw+=values[62];
+        *data_roll_grad+=values[3];
+        *data_pitch_grad+=values[21];
+        *data_yaw_grad+=values[62];
     }
     else
     {
@@ -117,12 +117,12 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
             x_Csek+=values[i];
             y_Csek+=values[i-1];
             z_Csek+=values[i-2];
-            *data_roll=x_Csek;
-            *data_pitch=y_Csek;
-            *data_yaw=z_Csek;        
-            x_Csek=Roll;
-            y_Csek=Pitch;
-            z_Csek=Yaw;
+            *data_roll_grad=x_Csek;
+            *data_pitch_grad=y_Csek;
+            *data_yaw_grad=z_Csek;        
+            x_Csek=Roll_Csec;
+            y_Csek=Pitch_Csec;
+            z_Csek=Yaw_Csec;
         }
     }
     sqlite3 *db;//запись в бд
@@ -134,7 +134,7 @@ double data_gyro(double roll,double pitch,double yaw,int time_request,int NUM_SA
     return 1;
     }   
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO Gyroscopes VALUES (%d,%f,%f,%f)", time_request, *data_roll, *data_pitch, *data_yaw);//угол наклона
+    snprintf(sql, sizeof(sql), "INSERT INTO Gyroscopes VALUES (%d,%f,%f,%f)", time_request, *data_roll_grad, *data_pitch_grad, *data_yaw_grad);//угол наклона
     rc=sqlite3_exec(db,sql,0,0,&err_msg);
     if(rc!=SQLITE_OK)
     {

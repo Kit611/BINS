@@ -78,6 +78,9 @@ double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z
 {
     srand(time(NULL));
     double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для сл значений
+    double t_start_y=14,t_end_y=71;
+    double t_start_x=0,t_end_x=1;
+    double t_start_z=4,t_end_z=13;
     //double *test = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для отправки итоговых значений для графика
     if (values == NULL) 
     {
@@ -85,9 +88,9 @@ double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z
         return 1;
     }
     generate_normal_accel(values, NUM_SAMPLES);
-    double Z=integrate(Z_axis_acceleration,time_request-1,time_request);
-    double Y=integrate(Y_axis_acceleration,time_request-1,time_request);//преобразование в скорость
-    double X=integrate(X_axis_acceleration,time_request-1,time_request);
+    double Z=integrate(Z_axis_acceleration,t_start_z,t_end_z);
+    double Y=integrate(Y_axis_acceleration,t_start_y,t_end_y);//преобразование в скорость
+    double X=integrate(X_axis_acceleration,t_start_x,t_end_x);
     double x=X;
     double y=Y;//для того чтобы основное число не менялось, а менялся только шум
     double z=Z;

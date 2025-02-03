@@ -83,7 +83,7 @@ double mag_napr(double x,double y)
     return atan2(y,x);
 }
 
-double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,double lon,double lat,double *data_x,double *data_y,double *data_z)//главная фукнция
+double data_mag(double x_nT,double y_nT,double z_nT,int time_request,int NUM_SAMPLES,double lon,double lat,double *data_x_mG,double *data_y_mG,double *data_z_mG)//главная фукнция
 {
     srand(time(NULL));
     double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для сл значений
@@ -92,29 +92,29 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }    
-    double x_mG=x*10;
-    double y_mG=y*10;
-    double z_mG=z*10;
-    double X=x_mG;
-    double Y=y_mG;//для того чтобы основное число не менялось, а менялся только шум
-    double Z=z_mG;
+    double x_mG=x_nT*10;
+    double y_mG=y_nT*10;
+    double z_mG=z_nT*10;
+    double X_mG=x_mG;
+    double Y_mG=y_mG;//для того чтобы основное число не менялось, а менялся только шум
+    double Z_mG=z_mG;
     if(time_request==0)
     {
-        *data_x=values[0];
-        *data_y=values[45];
-        *data_z=values[56];
+        *data_x_mG=values[0];
+        *data_y_mG=values[45];
+        *data_z_mG=values[56];
     }
     else if(time_request ==1)
     {
-        *data_x=values[1];
-        *data_y=values[12];
-        *data_z=values[76];
+        *data_x_mG=values[1];
+        *data_y_mG=values[12];
+        *data_z_mG=values[76];
     }
     else if(time_request ==2)
     {
-        *data_x=values[2];
-        *data_y=values[48];
-        *data_z=values[98];
+        *data_x_mG=values[2];
+        *data_y_mG=values[48];
+        *data_z_mG=values[98];
     }
     else
     {
@@ -123,17 +123,17 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
             x_mG+=values[i];
             y_mG+=values[i-1];
             z_mG+=values[i-2];
-            *data_x=x_mG;
-            *data_y=y_mG;
-            *data_z=z_mG;        
-            x_mG=X;
-            y_mG=Y;
-            z_mG=Z;
+            *data_x_mG=x_mG;
+            *data_y_mG=y_mG;
+            *data_z_mG=z_mG;        
+            x_mG=X_mG;
+            y_mG=Y_mG;
+            z_mG=Z_mG;
         }
     }
-    double declination = calculate_declination(*data_x,*data_y);
-    double inclination = calculate_inclination(*data_x,*data_y,*data_z);
-    double angle_dir_grad=mag_napr(*data_x,*data_y);
+    double declination = calculate_declination(*data_x_mG,*data_y_mG);
+    double inclination = calculate_inclination(*data_x_mG,*data_y_mG,*data_z_mG);
+    double angle_dir_grad=mag_napr(*data_x_mG,*data_y_mG);
     double true_dir_grad;
     if(declination>0)
     {
@@ -152,7 +152,7 @@ double data_mag(double x,double y,double z,int time_request,int NUM_SAMPLES,doub
     return 1;
     }   
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO Magnetometer VALUES (%d,%f,%f,%f,%f,%f,%f)", time_request, *data_x, *data_y, *data_z,declination,inclination,true_dir_grad);//значения магнетометра с шумом
+    snprintf(sql, sizeof(sql), "INSERT INTO Magnetometer VALUES (%d,%f,%f,%f,%f,%f,%f)", time_request, *data_x_mG, *data_y_mG, *data_z_mG,declination,inclination,true_dir_grad);//значения магнетометра с шумом
     rc=sqlite3_exec(db,sql,0,0,&err_msg);
     if(rc!=SQLITE_OK)
     {
