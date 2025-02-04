@@ -70,62 +70,111 @@ double integrate(double acceleration, double t_start, double t_end) {//функ�
     double dt = t_end - t_start;
     double initial_velocity = 0;
     double final_velocity = initial_velocity + acceleration * dt;
-
     return final_velocity;
 }
 
-double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z_axis_acceleration,int time_request,int NUM_SAMPLES,double *Y_axis,double *X_axis,double *Z_axis)//главная функция
+double data_accel(double *aY_m2sec,double *aX_m2sec,double *aZ_m2sec,double vx_msec,double vy_msec,double vz_msec,int num,int time_request,int count,double *Y_axis_msec,double *X_axis_msec,double *Z_axis_msec)//главная функция
 {
     srand(time(NULL));
-    double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для сл значений
-    double t_start_y=14,t_end_y=71;
-    double t_start_x=0,t_end_x=1;
-    double t_start_z=4,t_end_z=13;
+    double *values = (double *)malloc(count * sizeof(double));//массив для сл значений
     //double *test = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для отправки итоговых значений для графика
+    double X_msec,Y_msec,Z_msec;
     if (values == NULL) 
     {
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }
-    generate_normal_accel(values, NUM_SAMPLES);
-    double Z=integrate(Z_axis_acceleration,t_start_z,t_end_z);
-    double Y=integrate(Y_axis_acceleration,t_start_y,t_end_y);//преобразование в скорость
-    double X=integrate(X_axis_acceleration,t_start_x,t_end_x);
-    double x=X;
-    double y=Y;//для того чтобы основное число не менялось, а менялся только шум
-    double z=Z;
+    generate_normal_accel(values, count);
+    if(num==3)
+    {
+        double t_start_y=14,t_end_y=71;
+        double t_start_x=0,t_end_x=1;
+        double t_start_z=4,t_end_z=13;
+        Z_msec=integrate(*aZ_m2sec,t_start_z,t_end_z);
+        Y_msec=integrate(*aY_m2sec,t_start_y,t_end_y);//преобразование в скорость
+        X_msec=integrate(*aX_m2sec,t_start_x,t_end_x);
+    }
+    else if (num==2)
+    {
+        X_msec=vx_msec;
+        Y_msec=vy_msec;
+        Z_msec=vz_msec;
+    }
+    double x_msec=X_msec;
+    double y_msec=Y_msec;//для того чтобы основное число не менялось, а менялся только шум
+    double z_msec=Z_msec;
+    double ax=*aX_m2sec;
+    double ay=*aY_m2sec;
+    double az=*aZ_m2sec;
+    double aX=ax,aY=ay,aZ=az;
     if(time_request==0)
     {
-        *X_axis=values[0];
-        *Y_axis=values[78];
-        *Z_axis=values[22];
+        X_msec+=values[0];
+        Y_msec+=values[78];
+        Z_msec+=values[22];
+        *aY_m2sec+=values[4];
+        *aX_m2sec+=values[47];
+        *aZ_m2sec+=values[67];
+        *Y_axis_msec=Y_msec;
+        *X_axis_msec=X_msec;
+        *Z_axis_msec=Z_msec; 
+        Z_msec=z_msec;
+        Y_msec=y_msec;
+        X_msec=x_msec;
     }
     else if(time_request ==1)
     {
-        *X_axis=values[1];
-        *Y_axis=values[44];
-        *Z_axis=values[43];
+        X_msec+=values[1];
+        Y_msec+=values[44];
+        Z_msec+=values[43];
+        *aY_m2sec+=values[5];
+        *aX_m2sec+=values[23];
+        *aZ_m2sec+=values[65];
+        *Y_axis_msec=Y_msec;
+        *X_axis_msec=X_msec;
+        *Z_axis_msec=Z_msec; 
+        Z_msec=z_msec;
+        Y_msec=y_msec;
+        X_msec=x_msec;
     }
     else if(time_request ==2)
     {
-        *X_axis=values[2];
-        *Y_axis=values[87];
-        *Z_axis=values[91];
+        X_msec+=values[2];
+        Y_msec+=values[87];
+        Z_msec+=values[91];
+        *aY_m2sec+=values[6];
+        *aX_m2sec+=values[85];
+        *aZ_m2sec+=values[12];
+        *Y_axis_msec=Y_msec;
+        *X_axis_msec=X_msec;
+        *Z_axis_msec=Z_msec; 
+        Z_msec=z_msec;
+        Y_msec=y_msec;
+        X_msec=x_msec;
     }
     else
     {
         for(int i=0;i<time_request;i++)
         {        
-            Y+=values[i];
-            X+=values[i-1];
-            Z+=values[i-2];
+            Y_msec+=values[i];
+            X_msec+=values[i-1];
+            Z_msec+=values[i-2];
+            ax+=values[i];
+            ay+=values[i];
+            az+=values[i];
             // test[i]=Z_axis_acceleration;    
-            *Y_axis=Y;
-            *X_axis=X;
-            *Z_axis=Z;        
-            Z=z;
-            Y=y;
-            X=x;
+            *aY_m2sec=ay;
+            *aX_m2sec=ax;
+            *aZ_m2sec=az;
+            *Y_axis_msec=Y_msec;
+            *X_axis_msec=X_msec;
+            *Z_axis_msec=Z_msec;        
+            Z_msec=z_msec;
+            Y_msec=y_msec;
+            X_msec=x_msec;
+            ax=aX;
+            ay=aY;
+            az=aZ;
         }
     }
     sqlite3 *db;//запись в бд
@@ -137,7 +186,7 @@ double data_accel(double Y_axis_acceleration,double X_axis_acceleration,double Z
     return 1;
     }   
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO Accelerometrs VALUES (%d,%f,%f,%f)", time_request, *X_axis, *Y_axis, *Z_axis);//скорось по трем осям
+    snprintf(sql, sizeof(sql), "INSERT INTO Accelerometrs VALUES (%d,%f,%f,%f)", time_request, *X_axis_msec, *Y_axis_msec, *Z_axis_msec);//скорось по трем осям
     rc=sqlite3_exec(db,sql,0,0,&err_msg);
     if(rc!=SQLITE_OK)
     {

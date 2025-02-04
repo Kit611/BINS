@@ -96,18 +96,26 @@ double data_bar(double h_m,double sys_er, int time_request,int NUM_SAMPLES)//г�
     p_mbar=P_mbar;
     double data_request_mbar;
     P_mbar+=sys_er; //добавление системной ошибки
-    for(int i=0;i<time_request;i++)
+    if(time_request==0)
     {
-        P_mbar+=values[i];
+        P_mbar+=values[10];
         data_request_mbar=P_mbar; 
+    }
+    else
+    {
+        for(int i=0;i<time_request;i++)
+        {
+            P_mbar+=values[i-1];
+            data_request_mbar=P_mbar; 
+        }
     }
     sqlite3 *db;//запись в бд
     char *err_msg=0;
     int rc=sqlite3_open("Logs.db",&db);
     if(rc !=SQLITE_OK)
     {
-    sqlite3_close(db);
-    return 1;
+        sqlite3_close(db);
+        return 1;
     }   
     char sql[256];
     snprintf(sql, sizeof(sql), "INSERT INTO Barometr VALUES (%d,%f,%f,%f);", time_request, real_h_m, p_mbar, P_mbar);//давление в милибарах с шумом

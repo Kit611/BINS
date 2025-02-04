@@ -74,55 +74,119 @@ void integrade_angle(double *x_Csek,double *y_Csek,double *z_Csek,double Dt)
     *z_Csek=angle+*z_Csek*Dt;
 }
 
-double data_gyro(double roll_Csec,double pitch_Csec,double yaw_Csek,int time_request,int NUM_SAMPLES,double *data_roll_grad,double *data_pitch_grad,double * data_yaw_grad)//главная функция
+double data_gyro(double *vox_Csec,double *voy_Csec,double *voz_Csek,double ox_c, double oy_c,double oz_c,int num,int time_request,int count,double *data_roll_grad,double *data_pitch_grad,double * data_yaw_grad)//главная функция
 {
     srand(time(NULL));
-    double *values = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для сл значений
+    double *values = (double *)malloc(count * sizeof(double));//массив для сл значений
     if (values == NULL) 
     {
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }
-    generate_normal_gyro(values, NUM_SAMPLES);
-    double x_Csek=roll_Csec;
-    double y_Csek=pitch_Csec;
-    double z_Csek=yaw_Csek;
-    double DT=0.2;
-    integrade_angle(&x_Csek,&y_Csek,&z_Csek,DT);
-    double Roll_Csec=x_Csek;
-    double Pitch_Csec=y_Csek;     //для того чтобы основное число не менялось, а менялся только шум
-    double Yaw_Csec=z_Csek;
+    generate_normal_gyro(values, count);
+    double x_calibration_C=0;
+    double y_calibration_C=0;
+    double z_calibration_C=0;
+    double vx=*vox_Csec;
+    double vy=*voy_Csec;
+    double vz=*voz_Csek;
+    double Vx=vx,Vy=vy,Vz=vz;
+    if(num==3)
+    {
+        double x_Csek=*vox_Csec;
+        double y_Csek=*voy_Csec;
+        double z_Csek=*voz_Csek;
+        double DT=0.2;
+        integrade_angle(&x_Csek,&y_Csek,&z_Csek,DT);
+        if(*vox_Csec>0 || *vox_Csec<0)
+        {
+            x_calibration_C=x_Csek;
+        }
+        if(*voy_Csec>0 || *voy_Csec<0)
+        {
+            y_calibration_C=y_Csek;
+        }
+        if(*voz_Csek>0 || *voz_Csek<0)
+        {
+            z_calibration_C=z_Csek;
+        }
+    }
+    else if(num==2)
+    {
+        x_calibration_C=ox_c;
+        y_calibration_C=oy_c;
+        z_calibration_C=oz_c;
+    }
+    double Roll_Csec=x_calibration_C;
+    double Pitch_Csec=y_calibration_C;     //для того чтобы основное число не менялось, а менялся только шум
+    double Yaw_Csec=x_calibration_C;
     if(time_request==0)
     {
-        *data_roll_grad+=values[0];
-        *data_pitch_grad+=values[33];
-        *data_yaw_grad+=values[65];
+        x_calibration_C+=values[0];
+        y_calibration_C+=values[33];
+        z_calibration_C+=values[65];
+        *vox_Csec+=values[31];
+        *voy_Csec+=values[12];
+        *voz_Csek+=values[98];
+        *data_roll_grad=x_calibration_C;
+        *data_pitch_grad=y_calibration_C;
+        *data_yaw_grad=z_calibration_C; 
+        x_calibration_C=Roll_Csec;
+        y_calibration_C=Pitch_Csec;
+        z_calibration_C=Yaw_Csec;  
     }
     else if(time_request==1)
     {
-        *data_roll_grad+=values[1];
-        *data_pitch_grad+=values[43];
-        *data_yaw_grad+=values[86];
+        x_calibration_C+=values[1];
+        y_calibration_C+=values[43];
+        z_calibration_C+=values[86];
+        *vox_Csec+=values[8];
+        *voy_Csec+=values[73];
+        *voz_Csek+=values[10];
+        *data_roll_grad=x_calibration_C;
+        *data_pitch_grad=y_calibration_C;
+        *data_yaw_grad=z_calibration_C;  
+        x_calibration_C=Roll_Csec;
+        y_calibration_C=Pitch_Csec;
+        z_calibration_C=Yaw_Csec; 
     }
     else if (time_request==2)
     {
-        *data_roll_grad+=values[3];
-        *data_pitch_grad+=values[21];
-        *data_yaw_grad+=values[62];
+        x_calibration_C+=values[3];
+        y_calibration_C+=values[21];
+        z_calibration_C+=values[62];
+        *vox_Csec+=values[5];
+        *voy_Csec+=values[72];
+        *voz_Csek+=values[22];
+        *data_roll_grad=x_calibration_C;
+        *data_pitch_grad=y_calibration_C;
+        *data_yaw_grad=z_calibration_C; 
+        x_calibration_C=Roll_Csec;
+        y_calibration_C=Pitch_Csec;
+        z_calibration_C=Yaw_Csec;  
     }
     else
     {
         for(int i=0;i<time_request;i++)
         {        
-            x_Csek+=values[i];
-            y_Csek+=values[i-1];
-            z_Csek+=values[i-2];
-            *data_roll_grad=x_Csek;
-            *data_pitch_grad=y_Csek;
-            *data_yaw_grad=z_Csek;        
-            x_Csek=Roll_Csec;
-            y_Csek=Pitch_Csec;
-            z_Csek=Yaw_Csec;
+            x_calibration_C+=values[i];
+            y_calibration_C+=values[i-1];
+            z_calibration_C+=values[i-2];
+            vx+=values[i];
+            vy+=values[i];
+            vz+=values[i];
+            *vox_Csec=vx;
+            *voy_Csec=vy;
+            *voz_Csek=vz;
+            *data_roll_grad=x_calibration_C;
+            *data_pitch_grad=y_calibration_C;
+            *data_yaw_grad=z_calibration_C;        
+            x_calibration_C=Roll_Csec;
+            y_calibration_C=Pitch_Csec;
+            z_calibration_C=Yaw_Csec;
+            vx=Vx;
+            vy=Vy;
+            vz=Vz;
         }
     }
     sqlite3 *db;//запись в бд
@@ -144,8 +208,8 @@ double data_gyro(double roll_Csec,double pitch_Csec,double yaw_Csek,int time_req
         return 1;
     }
     sqlite3_close(db);
-    // size_t size=NUM_SAMPLES;
-    // if(size==NUM_SAMPLES)
+    // size_t size=count;
+    // if(size==count)
     // {
     //     send_gyro(values,size,SERVER_IP);
     //     printf("%s","Отправлено\n");
