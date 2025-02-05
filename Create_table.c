@@ -19,9 +19,9 @@ int main(){
     char *mag="DROP TABLE IF EXISTS Magnetometer;"
             "CREATE TABLE Magnetometer(Time_sec int,X_mG float,Y_mG float,Z_mG float,Declination_grad float,Inclination_grad float,True_direction_grad float);";      
     char *model="DROP TABLE IF EXISTS model_flight;"
-            "CREATE TABLE model_flight(Time_sec int,X float,Y float, H_m float,Ox_C float,Oy_C float,Oz_C float,Vx_mSec float, Vy_mSec float,Vz_mSec float,Vox_cSec float,Voy_cSec float,Voz_cSec float,ax_m2Sec float,ay_m2Sec float,az_m2Sec float, declination_c float,inclination_c float);";
+            "CREATE TABLE model_flight(Time_sec int,X float,Y float, H_m float,Ox_C float,Oy_C float,Oz_C float,Vx_mSec float, Vy_mSec float,Vz_mSec float,Vox_cSec float,Voy_cSec float,Voz_cSec float,ax_m2Sec float,ay_m2Sec float,az_m2Sec float, Bx_G float,By_G float,Bz_G float);";
     char *finish="DROP TABLE IF EXISTS finish_data;"
-            "CREATE TABLE finish_data(Time_sec int,X float,Y float, H_m float,Ox_C float,Oy_C float,Oz_C float,Vx_mSec float, Vy_mSec float,Vz_mSec float,Vox_cSec loat,Voy_Csec float,Voz_Csec float,ax_m2Sec float,ay_m2Sec float,az_m2Sec float, declination_c float,inclination_c float);";
+            "CREATE TABLE finish_data(Time_sec int,X float,Y float, H_mbar float,Ox_C float,Oy_C float,Oz_C float,Vx_mSec float, Vy_mSec float,Vz_mSec float,Vox_cSec loat,Voy_Csec float,Voz_Csec float,ax_m2Sec float,ay_m2Sec float,az_m2Sec float,Bx_mG float,By_mG float,Bz_mG float,declination_c float,inclination_c float);";
     rc=sqlite3_exec(db,accel,0,0,&err_msg);
     if(rc !=SQLITE_OK)
     {

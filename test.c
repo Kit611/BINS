@@ -65,59 +65,26 @@
 // }
 #include <stdio.h>
 #include <math.h>
-#include <stdlib.h>
 
-#define SAMPLE_COUNT 100
-
-typedef struct {
-    double mx; // Магнитное поле по оси X
-    double my; // Магнитное поле по оси Y
-    double mz; // Магнитное поле по оси Z
-} SensorData;
-
-// Генерация данных магнетометра
-void simulate_magnetometer(double *x, double *y, double *z, int count) {
-    for (int i = 0; i < count; i++) {
-        double angle = (double)i / count * 2 * M_PI;
-        x[i] = cos(angle) * 50000; // 50000 nT
-        y[i] = sin(angle) * 50000; // 50000 nT
-        z[i] = 0.5 * cos(angle / 2) * 50000; // 50000 nT
-    }
-}
-
-// Функция для вычисления магнитного склонения
-double calculate_declination(double mx, double my) {
-    double declination = atan2(my, mx);
-    return declination * (180.0 / M_PI); // Возвращаем угол склонения в градусах
-}
-
-// Функция для вычисления магнитного наклонения
-double calculate_inclination(double mx, double my, double mz) {
-    double inclination = atan2(mz, sqrt(mx * mx + my * my));
-    return inclination * (180.0 / M_PI); // Возвращаем угол наклонения в градусах
+void calculate_magnetic_parameters(double B_north, double B_east, double B_down, double *B_horizontal, double *B_total, double *azimuth) {
+    *B_horizontal = sqrt(B_north * B_north + B_east * B_east);
+    *B_total = sqrt(B_north * B_north + B_east * B_east + B_down * B_down);
+    *azimuth = atan2(B_east, B_north);
 }
 
 int main() {
-    SensorData data[SAMPLE_COUNT];
-    double mx[SAMPLE_COUNT], my[SAMPLE_COUNT], mz[SAMPLE_COUNT];
+    double B_north = 0.14451*1000;  // Замените на фактические значения
+    double B_east = 0.03056*1000;
+    double B_down = 0.50904*1000;
 
-    // Генерация данных
-    simulate_magnetometer(mx, my, mz, SAMPLE_COUNT);
+    double B_horizontal, B_total, azimuth;
+    calculate_magnetic_parameters(B_north, B_east, B_down, &B_horizontal, &B_total, &azimuth);
+    double azimuth_c=azimuth*(180/M_PI);
 
-    // Заполнение структуры данных
-    for (int i = 0; i < SAMPLE_COUNT; i++) {
-        data[i].mx = mx[i];
-        data[i].my = my[i];
-        data[i].mz = mz[i];
-    }
-
-    // Вычисление и вывод магнитного склонения и наклонения
-    for (int i = 0; i < SAMPLE_COUNT; i++) {
-        double declination = calculate_declination(data[i].mx, data[i].my);
-        double inclination = calculate_inclination(data[i].mx, data[i].my, data[i].mz);
-        printf("Data %d: M(%f, %f, %f), Declination: %f degrees, Inclination: %f degrees\n", 
-               i, data[i].mx, data[i].my, data[i].mz, declination, inclination);
-    }
+    printf("Горизонтальная составляющая: %f\n", B_horizontal);
+    printf("Общее значение магнитного поля: %f\n", B_total);
+    printf("Азимут магнитного поля: %f радиан\n", azimuth);
+    printf("Азимут магнитного поля: %f градус\n", azimuth_c);
 
     return 0;
 }
