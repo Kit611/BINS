@@ -66,7 +66,8 @@ void generate_normal_accel(double *values, int n)//генерация случа
     }
 }
 
-double integrate(double acceleration, double t_start, double t_end) {//функция интегрирования дял получения скорости
+double integrate(double acceleration, double t_start, double t_end)//функция интегрирования для получения скорости
+{
     double dt = t_end - t_start;
     double initial_velocity = 0;
     double final_velocity = initial_velocity + acceleration * dt;

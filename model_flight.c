@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define Time_work 100
+#define Time_work 100//время работы
 
 int get_time()//передача времени
 {
@@ -22,7 +22,7 @@ int flight(int num_model)
     double vox_csec=0,voy_csec=0,voz_csec=0;
     double ax_m2sec=0,ay_m2sec=0,az_m2sec=g_m2Sec;
     double Bx_G=0.14451,By_G=0.03056,Bz_G=0.50904;
-    switch (num_model)
+    switch (num_model)//генерация значения в зависимости от модели полета
     {
     case 1:
         printf("Модель висения.\n");
@@ -80,6 +80,7 @@ int flight(int num_model)
         }
         break;
     default:
+        printf("Такой модели полета нет");
         break;
     }
     return 0;

@@ -12,7 +12,7 @@
 #define MAX_BUFFER_SIZE 1024 //максимальное значение
 #define SIGMA_mag 0.22//значение сигма для генерации
 #define LIMIT 3.0   //ограничение диапозона
-#define DEG_TO_RAD (M_PI / 180.0)
+#define DEG_TO_RAD (M_PI / 180.0)//для перевода в радианы
 
 void send_mag(double *array, size_t size, const char *host)//отправка случайных значений для отрисовки графика по udp
 {
@@ -67,12 +67,12 @@ void generate_normal_mag(double *values, int n)//генерация случай
     }
 }
 
-void compute_rotation_matrix(double yaw, double pitch, double roll, double R[3][3]) {
+//расчет матрицы поворота
+void compute_rotation_matrix(double yaw, double pitch, double roll, double R[3][3])
+{
     double cy = cos(yaw * DEG_TO_RAD), sy = sin(yaw * DEG_TO_RAD);
     double cp = cos(pitch * DEG_TO_RAD), sp = sin(pitch * DEG_TO_RAD);
     double cr = cos(roll * DEG_TO_RAD), sr = sin(roll * DEG_TO_RAD);
-
-    // Матрица поворота из NED в систему вертолета
     R[0][0] = cy * cp;
     R[0][1] = cy * sp * sr - sy * cr;
     R[0][2] = cy * sp * cr + sy * sr;
@@ -85,26 +85,29 @@ void compute_rotation_matrix(double yaw, double pitch, double roll, double R[3][
 }
 
 // Применение матрицы поворота к вектору магнитного поля
-void transform_magnetic_field(double R[3][3], double *x_G,double *y_G,double *z_G, double Bx_G,double By_G,double Bz_G) {
+void transform_magnetic_field(double R[3][3], double *x_G,double *y_G,double *z_G, double Bx_G,double By_G,double Bz_G)
+{
     *x_G = R[0][0] * Bx_G + R[0][1] * By_G + R[0][2] * Bz_G;
     *y_G = R[1][0] * Bx_G + R[1][1] * By_G + R[1][2] * Bz_G;
     *z_G = R[2][0] * Bx_G + R[2][1] * By_G + R[2][2] * Bz_G;
 }
 
 // Функция для вычисления магнитного склонения
-double calculate_declination(double mx, double my) {
+double calculate_declination(double mx, double my)
+{
     double declination = atan2(my, mx);
     return declination*(180/M_PI); // Возвращаем угол склонения в градусах
 }
 
 // Функция для вычисления магнитного наклонения
-double calculate_inclination(double mx, double my, double mz) {
+double calculate_inclination(double mx, double my, double mz)
+{
     double b_hor=sqrt((mx*mx)+(my*my));
     double inclination = atan2(mz, b_hor);
     return inclination * (180/M_PI); // Возвращаем угол наклонения в градусах
 }
 
-double mag_napr(double x,double y)
+double mag_napr(double x,double y)//магнитное направление
 {
     return atan2(y,x);
 }
@@ -128,7 +131,7 @@ double data_mag(double Bx_G,double By_G,double Bz_G,double roll_C,double pitch_C
     double X_mG=x_mG;
     double Y_mG=y_mG;//для того чтобы основное число не менялось, а менялся только шум
     double Z_mG=z_mG;
-    if(time_request==0)
+    if(time_request==0)//добавление шума
     {
         x_mG+=values[0];
         y_mG+=values[45];
@@ -179,17 +182,17 @@ double data_mag(double Bx_G,double By_G,double Bz_G,double roll_C,double pitch_C
             z_mG=Z_mG;
         }
     }
-    double data_xmG=*data_x_mG;
-    double data_ymG=*data_y_mG;  //перевод в радианы
-    double data_zmG=*data_z_mG;
+    double data_xmG=abs(*data_x_mG);
+    double data_ymG=abs(*data_y_mG);
+    double data_zmG=abs(*data_z_mG);
     double declination_grad = calculate_declination(data_xmG,data_ymG);//расчет магнитного склонения
     double inclination_grad = calculate_inclination(data_xmG,data_ymG,data_zmG);//расчет магнитного наклонения
     *declination_c=declination_grad;
     *inclination_c=inclination_grad;
-    double angle_dir_rad=mag_napr(data_xmG,data_ymG);
+    double angle_dir_rad=mag_napr(data_xmG,data_ymG);//расчет магнитного направления
     double angle_dir_grad=angle_dir_rad*(180/M_PI);
     double true_dir_grad;
-    if(declination_grad>0)
+    if(declination_grad>0)//расчет истонного курса
     {
         true_dir_grad=angle_dir_grad+declination_grad;
     }

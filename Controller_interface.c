@@ -7,6 +7,7 @@
 #include "Magnetometer.c"
 #include "model_flight.c"
 
+//получение из бд
 int data_bd(int time_request,int *time,double *X,double *Y,double *h_m,double *ox_c,double *oy_c,double *oz_c,double *vx_msec,double *vy_msec,double *vz_msec,double *vox_csec,double *voy_csec,double *voz_csec,double *ax_m2sec,double *ay_m2sec,double *az_m2sec,double *Bx_G,double *By_G,double *Bz_G)//получение данных из бд
 {
     sqlite3 *db;
@@ -53,7 +54,7 @@ int data_bd(int time_request,int *time,double *X,double *Y,double *h_m,double *o
     sqlite3_close(db);
     return 0;
 }
-
+//запись в бд
 int write_bd(int time,double X,double Y,double h_mbar,double roll_grad,double pitch_grad,double yaw_grad,double X_axis_m_sec,double Y_axis_m_sec,double Z_axis_m_sec,double vox_csec,double voy_csec,double voz_csec,double ax_m2sec,double ay_m2sec,double az_m2sec,double x_mG,double y_mG,double z_mG,double declination_c,double inclination_c)
 {
     sqlite3 *db;
@@ -81,7 +82,7 @@ int write_bd(int time,double X,double Y,double h_mbar,double roll_grad,double pi
 int main(void)
 {    
     int num_model;
-    printf("Введите модель полета: ");
+    printf("Введите модель полета(1-Висение;2-Линейный полет): ");
     scanf("%d",&num_model);//выбор модели полета
     flight(num_model);//вызов модели полета
     int time_request=0;//время запроса
@@ -98,10 +99,10 @@ int main(void)
         double data_roll_grad,data_pitch_grad,data_yaw_grad;
         double Y_axis_m_sec,Z_axis_m_sec,X_axis_m_sec;
         double data_x_mG,data_y_mG,data_z_mG;
-        data_gyro(&vox_csec,&voy_csec,&voz_csec,ox_c,oy_c,oz_c,num_model,time_request,work_time,&data_roll_grad,&data_pitch_grad,&data_yaw_grad);
-        data_accel(&ax_m2sec,&ay_m2sec,&az_m2sec,vx_msec,vy_msec,vz_msec,num_model,time_request,work_time,&Y_axis_m_sec,&X_axis_m_sec,&Z_axis_m_sec);
-        data_mag(Bx_G,By_G,Bz_G,data_roll_grad,data_pitch_grad,data_yaw_grad,time_request,work_time,&data_x_mG,&data_y_mG,&data_z_mG,&declination_c,&inclination_c);
-        double bar_mbar=data_bar(h_m,sys_er,time_request,work_time);
+        data_gyro(&vox_csec,&voy_csec,&voz_csec,ox_c,oy_c,oz_c,num_model,time_request,work_time,&data_roll_grad,&data_pitch_grad,&data_yaw_grad);//данные с гироскопа
+        data_accel(&ax_m2sec,&ay_m2sec,&az_m2sec,vx_msec,vy_msec,vz_msec,num_model,time_request,work_time,&Y_axis_m_sec,&X_axis_m_sec,&Z_axis_m_sec);//данные с акселерометра
+        data_mag(Bx_G,By_G,Bz_G,data_roll_grad,data_pitch_grad,data_yaw_grad,time_request,work_time,&data_x_mG,&data_y_mG,&data_z_mG,&declination_c,&inclination_c);//данные с магнетометра
+        double bar_mbar=data_bar(h_m,sys_er,time_request,work_time);//данные с барометра
         printf("%-10d | (%f;%f;%f) | (%f;%f;%f) | (%f;%f;%f) | %f\n",i,data_roll_grad,data_pitch_grad,data_yaw_grad,X_axis_m_sec,Y_axis_m_sec,Z_axis_m_sec,data_x_mG,data_y_mG,data_z_mG,bar_mbar);
         time_request++;
         write_bd(i,X,Y,bar_mbar,data_roll_grad,data_pitch_grad,data_yaw_grad,X_axis_m_sec,Y_axis_m_sec,Z_axis_m_sec,vox_csec,voy_csec,voz_csec,ax_m2sec,ay_m2sec,az_m2sec,data_x_mG,data_y_mG,data_z_mG,declination_c,inclination_c);
