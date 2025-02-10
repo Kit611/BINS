@@ -84,31 +84,31 @@ double data_gyro(double *vox_Csec,double *voy_Csec,double *voz_Csek,double ox_c,
         return 1;
     }
     generate_normal_gyro(values, count);
-    double x_calibration_C=0;
-    double y_calibration_C=0;
-    double z_calibration_C=0;
+    double x_calibration_C;
+    double y_calibration_C;
+    double z_calibration_C;
     double vx=*vox_Csec;
     double vy=*voy_Csec;
     double vz=*voz_Csek;
     double Vx=vx,Vy=vy,Vz=vz;
     if(num==3)
     {
+        if(*vox_Csec!=0 || *voy_Csec!=0 || *voz_Csek!=0)
+        {
         double x_Csek=*vox_Csec;
         double y_Csek=*voy_Csec;
         double z_Csek=*voz_Csek;
-        double DT=0.2;
+        double DT=1;
         integrade_angle(&x_Csek,&y_Csek,&z_Csek,DT);
-        if(*vox_Csec>0 || *vox_Csec<0)
-        {
-            x_calibration_C=x_Csek;
+        x_calibration_C=x_Csek;
+        y_calibration_C=y_Csek;
+        z_calibration_C=z_Csek;
         }
-        if(*voy_Csec>0 || *voy_Csec<0)
+        else
         {
-            y_calibration_C=y_Csek;
-        }
-        if(*voz_Csek>0 || *voz_Csek<0)
-        {
-            z_calibration_C=z_Csek;
+            x_calibration_C=ox_c;
+            y_calibration_C=oy_c;
+            z_calibration_C=oz_c;
         }
     }
     else if(num==2)
@@ -117,6 +117,13 @@ double data_gyro(double *vox_Csec,double *voy_Csec,double *voz_Csek,double ox_c,
         y_calibration_C=oy_c;
         z_calibration_C=oz_c;
     }
+    else if (num==1)
+    {
+        x_calibration_C=0;
+        y_calibration_C=0;
+        z_calibration_C=0;
+    }
+    
     double Roll_Csec=x_calibration_C;
     double Pitch_Csec=y_calibration_C;     //для того чтобы основное число не менялось, а менялся только шум
     double Yaw_Csec=x_calibration_C;

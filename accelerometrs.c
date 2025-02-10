@@ -74,7 +74,9 @@ double integrate(double acceleration, double t_start, double t_end)//функц�
     return final_velocity;
 }
 
-double data_accel(double *aY_m2sec,double *aX_m2sec,double *aZ_m2sec,double vx_msec,double vy_msec,double vz_msec,int num,int time_request,int count,double *Y_axis_msec,double *X_axis_msec,double *Z_axis_msec)//главная функция
+double vx,vy,vz;
+
+double data_accel(double *aX_m2sec,double *aY_m2sec,double *aZ_m2sec,double vx_msec,double vy_msec,double vz_msec,int num,int time_request,int count,double *Y_axis_msec,double *X_axis_msec,double *Z_axis_msec)//главная функция
 {
     srand(time(NULL));
     double *values = (double *)malloc(count * sizeof(double));//массив для сл значений
@@ -88,12 +90,43 @@ double data_accel(double *aY_m2sec,double *aX_m2sec,double *aZ_m2sec,double vx_m
     generate_normal_accel(values, count);
     if(num==3)
     {
-        double t_start_y=14,t_end_y=71;
-        double t_start_x=0,t_end_x=1;
-        double t_start_z=4,t_end_z=13;
-        Z_msec=integrate(*aZ_m2sec,t_start_z,t_end_z);
-        Y_msec=integrate(*aY_m2sec,t_start_y,t_end_y);//преобразование в скорость
+        if(*aX_m2sec!=0 || *aY_m2sec!=0 || *aZ_m2sec!=1 || *aZ_m2sec!=-1)
+        {        
+        double t_start_x=time_request-1,t_end_x=time_request;
+        double t_start_y=time_request-1,t_end_y=time_request;
+        double t_start_z=time_request-1,t_end_z=time_request;
         X_msec=integrate(*aX_m2sec,t_start_x,t_end_x);
+        Y_msec=integrate(*aY_m2sec,t_start_y,t_end_y);//преобразование в скорость
+        Z_msec=integrate(*aZ_m2sec,t_start_z,t_end_z);
+        vy+=Y_msec;
+        if(X_msec<13)
+        {
+            vx+=X_msec;
+        }
+        else
+        {
+            vx=13;
+        }
+        if(Z_msec<4 && Z_msec>0)
+        {
+            vz+=Z_msec-1;
+        }
+        else if(time_request<53)
+        {
+            vz=4;
+        }
+        else
+        {
+            vz=0;
+        }
+        }
+        else
+        {
+            X_msec=vx;
+            Y_msec=vy;
+            Z_msec=vz;
+        }
+
     }
     else if (num==2)
     {
@@ -101,78 +134,79 @@ double data_accel(double *aY_m2sec,double *aX_m2sec,double *aZ_m2sec,double vx_m
         Y_msec=vy_msec;
         Z_msec=vz_msec;
     }
-    double x_msec=X_msec;
-    double y_msec=Y_msec;//для того чтобы основное число не менялось, а менялся только шум
-    double z_msec=Z_msec;
+    double x_msec=vx;
+    double y_msec=vy;//для того чтобы основное число не менялось, а менялся только шум
+    double z_msec=vz;
     double ax=*aX_m2sec;
     double ay=*aY_m2sec;
     double az=*aZ_m2sec;
     double aX=ax,aY=ay,aZ=az;
-    if(time_request==0)
+
+   if(time_request==0)
     {
         X_msec+=values[0];
         Y_msec+=values[78];
         Z_msec+=values[22];
-        *aY_m2sec+=values[4];
         *aX_m2sec+=values[47];
+        *aY_m2sec+=values[4];
         *aZ_m2sec+=values[67];
-        *Y_axis_msec=Y_msec;
         *X_axis_msec=X_msec;
+        *Y_axis_msec=Y_msec;
         *Z_axis_msec=Z_msec; 
-        Z_msec=z_msec;
-        Y_msec=y_msec;
         X_msec=x_msec;
+        Y_msec=y_msec;
+        Z_msec=z_msec;
     }
     else if(time_request ==1)
     {
         X_msec+=values[1];
         Y_msec+=values[44];
         Z_msec+=values[43];
-        *aY_m2sec+=values[5];
         *aX_m2sec+=values[23];
+        *aY_m2sec+=values[5];
         *aZ_m2sec+=values[65];
-        *Y_axis_msec=Y_msec;
         *X_axis_msec=X_msec;
+        *Y_axis_msec=Y_msec;
         *Z_axis_msec=Z_msec; 
-        Z_msec=z_msec;
-        Y_msec=y_msec;
         X_msec=x_msec;
+        Y_msec=y_msec;
+        Z_msec=z_msec;
     }
     else if(time_request ==2)
     {
         X_msec+=values[2];
         Y_msec+=values[87];
         Z_msec+=values[91];
-        *aY_m2sec+=values[6];
         *aX_m2sec+=values[85];
+        *aY_m2sec+=values[6];
         *aZ_m2sec+=values[12];
-        *Y_axis_msec=Y_msec;
         *X_axis_msec=X_msec;
+        *Y_axis_msec=Y_msec;
         *Z_axis_msec=Z_msec; 
-        Z_msec=z_msec;
-        Y_msec=y_msec;
         X_msec=x_msec;
+        Y_msec=y_msec;
+        Z_msec=z_msec;
     }
     else
     {
         for(int i=0;i<time_request;i++)
-        {        
-            Y_msec+=values[i];
-            X_msec+=values[i-1];
+        {   
+            X_msec+=values[i];     
+            Y_msec+=values[i-1];
             Z_msec+=values[i-2];
             ax+=values[i];
             ay+=values[i];
             az+=values[i];
             // test[i]=Z_axis_acceleration;    
-            *aY_m2sec=ay;
             *aX_m2sec=ax;
+            *aY_m2sec=ay;
             *aZ_m2sec=az;
-            *Y_axis_msec=Y_msec;
             *X_axis_msec=X_msec;
+            *Y_axis_msec=Y_msec;
             *Z_axis_msec=Z_msec;        
-            Z_msec=z_msec;
-            Y_msec=y_msec;
             X_msec=x_msec;
+            Y_msec=y_msec;
+            Z_msec=z_msec;
             ax=aX;
             ay=aY;
             az=aZ;

@@ -82,7 +82,7 @@ int write_bd(int time,double X,double Y,double h_mbar,double roll_grad,double pi
 int main(void)
 {    
     int num_model;
-    printf("Введите модель полета(1-Висение;2-Линейный полет): ");
+    printf("Введите модель полета(1-Висение;2-Линейный полет;3-взлет и движение): ");
     scanf("%d",&num_model);//выбор модели полета
     flight(num_model);//вызов модели полета
     int time_request=0;//время запроса
