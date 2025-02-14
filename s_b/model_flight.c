@@ -3,8 +3,14 @@
 #include <sqlite3.h>
 #include <stdlib.h>
 #include <time.h>
-
+//ми 8мт "Метео"
 #define Time_work 100//время работы
+#define max_height 150//максимальная высота(4500)
+#define min_height 10//минимальная высота
+#define max_speed 13//максимальная горизонтальная сокрость(64 м/с, 230км/ч)
+#define up_speed 4//скорость набора высоты(6м/с)
+#define down_speed 3//скорость посадки(6м/с)
+#define down_angle -30//тангаж
 
 int get_time()//передача времени
 {
@@ -28,7 +34,7 @@ int flight(int num_model)
         printf("Модель висения.\n");
         for(int i=0;i<Time_work;i++)
         {
-            h_m=150;
+            h_m=max_height;
             sqlite3 *db;
             char *err_msg=0;
             int rc=sqlite3_open("Logs.db",&db);
@@ -54,9 +60,9 @@ int flight(int num_model)
         printf("Модель линейного полета.\n");
         for(int i=0;i<Time_work;i++)
         {
-            h_m=150;
-            vx_msec=13;
-            oy_c=-30;
+            h_m=max_height;
+            vx_msec=max_speed;
+            oy_c=down_angle;
             X+=vx_msec;
             sqlite3 *db;
             char *err_msg=0;
@@ -81,25 +87,25 @@ int flight(int num_model)
         break;
     case 3:
         printf("Модель взлета и движения.\n");
-        h_m=10;
+        h_m=min_height;
         for(int i=0;i<Time_work;i++)
         {
-            if(i>Time_work-90 && h_m<150)
+            if(i>Time_work-90 && h_m<max_height)
             {
                 az_m2sec=1.4;
-                if(vz_msec<4)
+                if(vz_msec<up_speed)
                 {
-                    vz_msec+=az_m2sec-1;
+                    vz_msec+=az_m2sec-g_m2Sec;
                 }
                 else
                 {
-                    az_m2sec=-1;
-                    vz_msec=4;
+                    az_m2sec=-g_m2Sec;
+                    vz_msec=up_speed;
                 }
                 h_m+=vz_msec;
-                if(h_m>150)
+                if(h_m>max_height)
                 {
-                    h_m=150;
+                    h_m=max_height;
                 }
             }
             else if (i>Time_work-49 && i<Time_work-47)
@@ -109,69 +115,19 @@ int flight(int num_model)
             }
             else if(i>Time_work-48)
             {
-                oy_c=-30;
+                oy_c=down_angle;
                 voy_csec=0;
                 ax_m2sec=0.448;
-                if(vx_msec<13)
+                if(vx_msec<max_speed)
                 {
                     vx_msec+=ax_m2sec;
                 }
                 else
                 {
                     ax_m2sec=0;
-                    vx_msec=13;
+                    vx_msec=max_speed;
                 }
-            }
-            // else if (i>Time_work-18 && i<Time_work-16)
-            // {
-            //     voy_csec=30;
-            //     oy_c=0;
-            // }
-            // else if (i>Time_work-16 && i<Time_work-14)
-            // {
-            //     voy_csec=30;
-            //     oy_c=30;
-            // }
-            // else if (i>Time_work-14 && i<Time_work-10)
-            // {
-            //     voy_csec=0;
-            //     ax_m2sec=-1.857;
-            //     if(vx_msec>0)
-            //     {
-            //         vx_msec+=ax_m2sec;
-            //     }
-            //     else
-            //     {
-            //         ax_m2sec=0;
-            //         vx_msec=0;
-            //     }
-            // }
-            // else if (i>Time_work-10 && i<Time_work-8)
-            // {
-            //     voy_csec=-30;
-            //     oy_c=0;
-            // // }
-            // else if (i>Time_work-8)
-            // {
-            //     az_m2sec=-1.375;
-            //     if(vz_msec<3)
-            //     {
-            //         vz_msec+=ax_m2sec+1;
-            //     }
-            //     else
-            //     {
-            //         az_m2sec=1;
-            //         vz_msec=3;
-            //     }
-            //     if(h_m>0)
-            //     {
-            //         h_m+=vz_msec;
-            //     }
-            //     else
-            //     {
-            //         h_m=0;
-            //     }
-            // }
+            }            
             X+=vx_msec;
             sqlite3 *db;
             char *err_msg=0;

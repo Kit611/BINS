@@ -2,45 +2,48 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sqlite3
 
-dt=[900,901,902,903]
-
-a=int(input('Выберите таблицу(1-начальные данные или 2-конечные данные):'))
-if a==1:
-    table='model_flight'
-    height='H_m'
-    vx='Vx_mSec'
-    vy='Vy_mSec'
-    vz='Vz_mSec'
-    ox='Ox_C'
-    oy='Oy_C'
-    oz='Oz_C'
-    vox='Vox_cSec'
-    voy='Voy_cSec'
-    voz='Voz_cSec'
-    ax='ax_m2Sec'
-    ay='ay_m2Sec'
-    az='az_m2Sec'
-    bx='Bx_G'
-    by='By_G'
-    bz='Bz_G'
-elif a==2:
-    table='finish_data'
-    height='H_mbar'
-    vx='Vx_mSec'
-    vy='Vy_mSec'
-    vz='Vz_mSec'
-    ox='Ox_C'
-    oy='Oy_C'
-    oz='Oz_C'
-    vox='Vox_cSec'
-    voy='Voy_cSec'
-    voz='Voz_cSec'
-    ax='ax_m2Sec'
-    ay='ay_m2Sec'
-    az='az_m2Sec'
-    bx='Bx_mG'
-    by='By_mG'
-    bz='Bz_mG'
+while(True):
+    a=int(input('Выберите таблицу(1-начальные данные или 2-конечные данные):'))
+    if a==1:
+        table='model_flight'
+        height='H_m'
+        vx='Vx_mSec'
+        vy='Vy_mSec'
+        vz='Vz_mSec'
+        ox='Ox_C'
+        oy='Oy_C'
+        oz='Oz_C'
+        vox='Vox_cSec'
+        voy='Voy_cSec'
+        voz='Voz_cSec'
+        ax='ax_m2Sec'
+        ay='ay_m2Sec'
+        az='az_m2Sec'
+        bx='Bx_G'
+        by='By_G'
+        bz='Bz_G'
+        break
+    elif a==2:
+        table='finish_data'
+        height='H_mbar'
+        vx='Vx_mSec'
+        vy='Vy_mSec'
+        vz='Vz_mSec'
+        ox='Ox_C'
+        oy='Oy_C'
+        oz='Oz_C'
+        vox='Vox_cSec'
+        voy='Voy_cSec'
+        voz='Voz_cSec'
+        ax='ax_m2Sec'
+        ay='ay_m2Sec'
+        az='az_m2Sec'
+        bx='Bx_mG'
+        by='By_mG'
+        bz='Bz_mG'
+        break
+    else:
+        print("Нет такой таблицы") 
 
 # Подключение к базе данных
 engine = sqlite3.connect('Logs.db')

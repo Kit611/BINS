@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <sqlite3.h>
 #include "Barometr.c"
 #include "gyroscopes.c"
@@ -82,16 +83,38 @@ int write_bd(int time,double X,double Y,double h_mbar,double roll_grad,double pi
 int main(void)
 {    
     int num_model;
-    printf("Введите модель полета(1-Висение;2-Линейный полет;3-взлет и движение): ");
-    scanf("%d",&num_model);//выбор модели полета
+    while (true)
+    {
+        printf("Введите модель полета(1-Висение;2-Линейный полет;3-взлет и движение): ");
+        scanf("%d",&num_model);//выбор модели полета
+        if(num_model==1 || num_model==2 || num_model==3)
+        {
+            break;
+        }
+        else
+        {
+            printf("Такой маодели полета нет. Введите еще раз\n");
+        }
+    }
     flight(num_model);//вызов модели полета
     int time_request=0;//время запроса
     int time_sec;//время которое возвращается
     double X,Y,h_m,ox_c,oy_c,oz_c,vx_msec,vy_msec,vz_msec,vox_csec,voy_csec,voz_csec,ax_m2sec,ay_m2sec,az_m2sec,Bx_G,By_G,Bz_G,declination_c=0,inclination_c=0;
     double sys_er;
     int work_time=get_time();//время работы
-    printf("Введите погрешность от -4.5 до 4.5: ");
-    scanf("%lf",&sys_er);//ввод системной ошибки
+    while (true)
+    {
+        printf("Введите погрешность от -4.5 до 4.5: ");
+        scanf("%lf",&sys_er);//ввод системной ошибки
+        if(sys_er>=-4.5 && sys_er<=4.5)
+        {
+            break;
+        }
+        else
+        {
+            printf("Неверная системная ошибка. Введите еще раз\n");
+        }
+    }
     printf("%-10s| %-42s | %-43s | %-40s | %s\n","Время(сек):","Гироскоп(град):","Акселерометр(g):","Магнетометер(mG):","Барометр(mbar):");
     for(int i=0;i<work_time;i++)
     {
