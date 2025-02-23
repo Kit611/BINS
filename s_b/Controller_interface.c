@@ -6,7 +6,7 @@
 #include "gyroscopes.c"
 #include "accelerometrs.c"
 #include "Magnetometer.c"
-#include "model_flight.c"
+#include "model_flight.h"
 
 //получение из бд
 int data_bd(int time_request,int *time,double *X,double *Y,double *h_m,double *ox_c,double *oy_c,double *oz_c,double *vx_msec,double *vy_msec,double *vz_msec,double *vox_csec,double *voy_csec,double *voz_csec,double *ax_m2sec,double *ay_m2sec,double *az_m2sec,double *Bx_G,double *By_G,double *Bz_G)//получение данных из бд
