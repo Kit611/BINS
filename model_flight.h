@@ -5,21 +5,24 @@
 #include <stdlib.h>
 #include <time.h>
 //ми 8мт "Метео"
-#define Time_work 100//время работы
-#define max_height 150//максимальная высота(4500)
+#define Time_work 100//время работы минуты(секунды)
+#define max_height 4500//максимальная высота(150)
 #define min_height 10//минимальная высота
-#define max_speed 13//максимальная горизонтальная сокрость(64 м/с, 230км/ч)
-#define up_speed 4//скорость набора высоты(6м/с)
-#define down_speed 3//скорость посадки(6м/с)
+#define max_speed 64//максимальная горизонтальная сокрость(64 м/с, 230км/ч)13
+#define up_speed 6//скорость набора высоты(6м/с)4
+#define down_speed 6//скорость посадки(6м/с)3
 #define down_angle -30//тангаж
+#define direction Notrh//курс полета
+int time_sec;
 
 int get_time()//передача времени
 {
-    return Time_work;
+    return time_sec;
 }
 
 int flight(int num_model)
 {
+    time_sec=Time_work*60;
     const double g_m2Sec=1;
     double h_m=0;
     double X=0;
@@ -33,7 +36,7 @@ int flight(int num_model)
     {
     case 1:
         printf("Модель висения.\n");
-        for(int i=0;i<Time_work;i++)
+        for(int i=0;i<time_sec;i++)
         {
             h_m=max_height;
             sqlite3 *db;
@@ -59,7 +62,7 @@ int flight(int num_model)
         break;
     case 2:
         printf("Модель линейного полета.\n");
-        for(int i=0;i<Time_work;i++)
+        for(int i=0;i<time_sec;i++)
         {
             h_m=max_height;
             vx_msec=max_speed;
@@ -89,11 +92,11 @@ int flight(int num_model)
     case 3:
         printf("Модель взлета и движения.\n");
         h_m=min_height;
-        for(int i=0;i<Time_work;i++)
+        for(int i=0;i<time_sec;i++)
         {
-            if(i>Time_work-90 && h_m<max_height)
+            if(i>time_sec-5900 && h_m<max_height)
             {
-                az_m2sec=1.4;
+                az_m2sec=1.06;
                 if(vz_msec<up_speed)
                 {
                     vz_msec+=az_m2sec-g_m2Sec;
@@ -109,16 +112,18 @@ int flight(int num_model)
                     h_m=max_height;
                 }
             }
-            else if (i>Time_work-49 && i<Time_work-47)
+            else if (i>time_sec-5102 && i<time_sec-5100)
             {
                 vz_msec=0;
                 voy_csec=-30;                
             }
-            else if(i>Time_work-48)
+            else if(i>time_sec-5101)
             {
                 oy_c=down_angle;
                 voy_csec=0;
-                ax_m2sec=0.448;
+                ax_m2sec=0.64;
+                Bx_G-=0.0000000256;
+                Bz_G+=0.0000000256;
                 if(vx_msec<max_speed)
                 {
                     vx_msec+=ax_m2sec;

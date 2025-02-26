@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sqlite3.h>
-#include "Barometr.c"
-#include "gyroscopes.c"
-#include "accelerometrs.c"
-#include "Magnetometer.c"
+#include "Barometr.h"
+#include "gyroscopes.h"
+#include "accelerometrs.h"
+#include "Magnetometer.h"
 #include "model_flight.h"
 
 //получение из бд
