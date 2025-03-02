@@ -12,6 +12,7 @@
 #define up_speed 6//скорость набора высоты(6м/с)4
 #define down_speed 6//скорость посадки(6м/с)3
 #define down_angle -30//тангаж
+#define up_angle 30
 #define direction Notrh//курс полета
 int time_sec;
 
@@ -90,11 +91,11 @@ int flight(int num_model)
         }
         break;
     case 3:
-        printf("Модель взлета и движения.\n");
+        printf("Модель: взлет->движениe->посадка.\n");
         h_m=min_height;
         for(int i=0;i<time_sec;i++)
         {
-            if(i>time_sec-5900 && h_m<max_height)
+            if(i>time_sec-5900 && i<time_sec-5650)
             {
                 az_m2sec=1.06;
                 if(vz_msec<up_speed)
@@ -106,18 +107,21 @@ int flight(int num_model)
                     az_m2sec=-g_m2Sec;
                     vz_msec=up_speed;
                 }
-                h_m+=vz_msec;
-                if(h_m>max_height)
+                
+                if(h_m<max_height)
+                {
+                    h_m+=vz_msec;    
+                }
+                else
                 {
                     h_m=max_height;
                 }
             }
-            else if (i>time_sec-5102 && i<time_sec-5100)
+            else if (i>time_sec-5650 && i<time_sec-5648)
             {
-                vz_msec=0;
                 voy_csec=-30;                
             }
-            else if(i>time_sec-5101)
+            else if(i>time_sec-5649 && i<time_sec-1154)
             {
                 oy_c=down_angle;
                 voy_csec=0;
@@ -132,9 +136,96 @@ int flight(int num_model)
                 {
                     ax_m2sec=0;
                     vx_msec=max_speed;
+                }                
+                if(h_m<max_height)
+                {
+                    h_m+=vz_msec;   
+                }
+                else
+                {
+                    vz_msec=0;
+                    h_m=max_height;
+                }
+                X+=vx_msec;
+            }            
+            else if (i>time_sec-1154 && i<time_sec-1152)
+            {
+                voy_csec=0;
+                oy_c=voy_csec;
+            }
+            else if (i>time_sec-1152 && i<time_sec-1150)
+            {
+                voy_csec=30;
+            }
+            else if (i>time_sec-1151 && i<time_sec-1050)
+            {
+                oy_c=up_angle;
+                voy_csec=0;
+                ax_m2sec=-0.64;
+                if(vx_msec>0)
+                {
+                    vx_msec+=ax_m2sec;
+                }
+                else if(vx_msec<=0)
+                {                
+                    vx_msec=0;
+                }
+                if (vx_msec==0)
+                {
+                    ax_m2sec=0;
+                }                
+                X+=vx_msec;
+            }
+            else
+            {
+                ax_m2sec=0;
+                oy_c=0;
+                az_m2sec=-0.4;
+                if(vz_msec<down_speed)
+                {
+                    vz_msec+=az_m2sec+g_m2Sec;
+                }
+                else
+                {
+                    az_m2sec=g_m2Sec;
+                    vz_msec=down_speed;
+                }                
+                if(h_m>min_height)
+                {
+                    h_m-=vz_msec;
+                }
+                else
+                {
+                    vz=0;
+                    h_m=min_height;
                 }
             }            
-            X+=vx_msec;
+            sqlite3 *db;
+            char *err_msg=0;
+            int rc=sqlite3_open("Logs.db",&db);
+            if(rc !=SQLITE_OK)
+            {
+                sqlite3_close(db);
+                return 1;
+            }   
+            char sql[256];
+            snprintf(sql, sizeof(sql), "INSERT INTO model_flight VALUES (%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f)",i,X,Y,h_m,ox_c,oy_c,oz_c,vx_msec,vy_msec,vz_msec,vox_csec,voy_csec,voz_csec,ax_m2sec,ay_m2sec,az_m2sec,Bx_G,By_G,Bz_G);
+            rc=sqlite3_exec(db,sql,0,0,&err_msg);
+            if(rc!=SQLITE_OK)
+            {
+                printf ("SQL error: %s\n",err_msg);
+                sqlite3_free(err_msg);
+                sqlite3_close(db);
+                return 1;
+            }
+            sqlite3_close(db);
+        }
+        break;
+    case 4:
+        printf("Модель: движение с поворотом.\n");
+        h_m=min_height;
+        for(int i=0;i<time_sec;i++)
+        {
             sqlite3 *db;
             char *err_msg=0;
             int rc=sqlite3_open("Logs.db",&db);

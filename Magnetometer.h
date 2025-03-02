@@ -15,34 +15,6 @@
 #define LIMIT 3.0   //ограничение диапозона
 #define DEG_TO_RAD (M_PI / 180.0)//для перевода в радианы
 
-void send_mag(double *array, size_t size, const char *host)//отправка случайных значений для отрисовки графика по udp
-{
-    int sock;
-    struct sockaddr_in server_addr;
-    sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock < 0) 
-    {
-        perror("Ошибка создания сокета");
-        exit(EXIT_FAILURE);
-    }
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(SERVER_PORT);
-    inet_pton(AF_INET, host, &server_addr.sin_addr);
-    for (size_t i = 0; i < size; i++)
-    {
-        char buffer[MAX_BUFFER_SIZE];
-        snprintf(buffer, sizeof(buffer), "%f", array[i]);
-        ssize_t sent_bytes = sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
-        if (sent_bytes < 0) 
-        {
-            perror("Ошибка отправки данных");
-        }
-        usleep(1000);
-    }
-    close(sock);
-}
-
 void generate_normal_mag(double *values, int n)//генерация случайных значений нормальным распределением
 {
     int i = 0;
@@ -220,15 +192,5 @@ double data_mag(double Bx_G,double By_G,double Bz_G,double roll_C,double pitch_C
         return 1;
     }
     sqlite3_close(db);
-    // size_t size=count;
-    // if(size==count)
-    // {
-    //     send_mag(values,size,SERVER_IP);
-    //     printf("%s","Отправлено\n");
-    // }
-    // else
-    // {
-    //     printf("Количество элементов: %ld", size);
-    // }
-    // free(values);
+    free(values);
 }

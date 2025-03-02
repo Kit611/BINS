@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sqlite3.h>
-#include "Barometr.c"
-#include "gyroscopes.c"
-#include "accelerometrs.c"
-#include "Magnetometer.c"
+#include "Barometr.h"
+#include "gyroscopes.h"
+#include "accelerometrs.h"
+#include "Magnetometer.h"
 #include "model_flight.h"
 
 //получение из бд
@@ -85,7 +85,7 @@ int main(void)
     int num_model;
     while (true)
     {
-        printf("Введите модель полета(1-Висение;2-Линейный полет;3-взлет и движение): ");
+        printf("Введите модель полета(1-Висение;2-Линейный полет;3-взлет->движение->посадка): ");
         scanf("%d",&num_model);//выбор модели полета
         if(num_model==1 || num_model==2 || num_model==3)
         {
@@ -93,7 +93,7 @@ int main(void)
         }
         else
         {
-            printf("Такой маодели полета нет. Введите еще раз\n");
+            printf("Такой модели полета нет. Введите еще раз\n");
         }
     }
     flight(num_model);//вызов модели полета

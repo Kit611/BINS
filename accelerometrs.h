@@ -14,34 +14,6 @@
 #define SIGMA_accel 1.29//значение сигма для генерации
 #define LIMIT 3.0   //ограничения дипозона 
 
-void send_accel(double *array, size_t size, const char *host)//отправка случайных значений для отрисовки графика по udp
-{
-    int sock;
-    struct sockaddr_in server_addr;
-    sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock < 0) 
-    {
-        perror("Ошибка создания сокета");
-        exit(EXIT_FAILURE);
-    }
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(SERVER_PORT);
-    inet_pton(AF_INET, host, &server_addr.sin_addr);
-    for (size_t i = 0; i < size; i++)
-    {
-        char buffer[MAX_BUFFER_SIZE];
-        snprintf(buffer, sizeof(buffer), "%f", array[i]);
-        ssize_t sent_bytes = sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
-        if (sent_bytes < 0) 
-        {
-            perror("Ошибка отправки данных");
-        }
-        usleep(1000);
-    }
-    close(sock);
-}
-
 void generate_normal_accel(double *values, int n)//генерация случайных значений нормальным распределением
 {
     int i = 0;
@@ -232,15 +204,5 @@ double data_accel(double *aX_m2sec,double *aY_m2sec,double *aZ_m2sec,double vx_m
         return 1;
     }
     sqlite3_close(db);
-    // size_t size=NUM_SAMPLES;
-    // if(size==NUM_SAMPLES)
-    // {
-    //     send_accel(values,size,SERVER_IP);
-    //     printf("%s","Отправлено\n");
-    // }
-    // else
-    // {
-    //     printf("Количество элементов: %ld", size);
-    // }
     free(values);  
 }
