@@ -8,10 +8,7 @@
 #include <unistd.h>
 #include <sqlite3.h>
 
-#define SERVER_PORT 12345//порт
-#define SERVER_IP "127.0.0.1"//ip
-#define MAX_BUFFER_SIZE 1024 //максимальное значение
-#define SIGMA_mag 0.22//значение сигма для генерации
+#define SIGMA_MAG 0.22//значение сигма для генерации
 #define LIMIT 3.0   //ограничение диапозона
 #define DEG_TO_RAD (M_PI / 180.0)//для перевода в радианы
 
@@ -29,12 +26,12 @@ void generate_normal_mag(double *values, int n)//генерация случай
         } while (s >= 1 || s == 0);
 
         double factor = sqrt(-2.0 * log(s) / s);
-        z0 = u1 * factor * SIGMA_mag;
-        z1 = u2 * factor * SIGMA_mag;
-        if (z0 < -LIMIT * SIGMA_mag) z0 = -LIMIT * SIGMA_mag;
-        if (z0 > LIMIT * SIGMA_mag) z0 = LIMIT * SIGMA_mag;
-        if (z1 < -LIMIT * SIGMA_mag) z1 = -LIMIT * SIGMA_mag;
-        if (z1 > LIMIT * SIGMA_mag) z1 = LIMIT * SIGMA_mag;
+        z0 = u1 * factor * SIGMA_MAG;
+        z1 = u2 * factor * SIGMA_MAG;
+        if (z0 < -LIMIT * SIGMA_MAG) z0 = -LIMIT * SIGMA_MAG;
+        if (z0 > LIMIT * SIGMA_MAG) z0 = LIMIT * SIGMA_MAG;
+        if (z1 < -LIMIT * SIGMA_MAG) z1 = -LIMIT * SIGMA_MAG;
+        if (z1 > LIMIT * SIGMA_MAG) z1 = LIMIT * SIGMA_MAG;
         values[i++] = z0;
         if (i < n) values[i++] = z1;
     }

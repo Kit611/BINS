@@ -8,10 +8,7 @@
 #include <unistd.h>
 #include <sqlite3.h>
 
-#define SERVER_PORT 12345//порт
-#define SERVER_IP "127.0.0.1"//ip
-#define MAX_BUFFER_SIZE 1024 //максимальное значение
-#define SIGMA_gyro 0.135//значение сигма для генерации
+#define SIGMA_GYRO 0.135//значение сигма для генерации
 #define LIMIT 3.0   //ограничения дипозона 
 
 void generate_normal_gyro(double *values, int n)//генерация случайных значений нормальным распределением
@@ -28,12 +25,12 @@ void generate_normal_gyro(double *values, int n)//генерация случа�
         } while (s >= 1 || s == 0);
 
         double factor = sqrt(-2.0 * log(s) / s);
-        z0 = u1 * factor * SIGMA_gyro;
-        z1 = u2 * factor * SIGMA_gyro;
-        if (z0 < -LIMIT * SIGMA_gyro) z0 = -LIMIT * SIGMA_gyro;
-        if (z0 > LIMIT * SIGMA_gyro) z0 = LIMIT * SIGMA_gyro;
-        if (z1 < -LIMIT * SIGMA_gyro) z1 = -LIMIT * SIGMA_gyro;
-        if (z1 > LIMIT * SIGMA_gyro) z1 = LIMIT * SIGMA_gyro;
+        z0 = u1 * factor * SIGMA_GYRO;
+        z1 = u2 * factor * SIGMA_GYRO;
+        if (z0 < -LIMIT * SIGMA_GYRO) z0 = -LIMIT * SIGMA_GYRO;
+        if (z0 > LIMIT * SIGMA_GYRO) z0 = LIMIT * SIGMA_GYRO;
+        if (z1 < -LIMIT * SIGMA_GYRO) z1 = -LIMIT * SIGMA_GYRO;
+        if (z1 > LIMIT * SIGMA_GYRO) z1 = LIMIT * SIGMA_GYRO;
         values[i++] = z0;
         if (i < n) values[i++] = z1;
     }
