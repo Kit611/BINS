@@ -8,8 +8,8 @@
 #include <unistd.h>
 #include <sqlite3.h>
 
-#define SIGMA_ACCEL 1.29//значение сигма для генерации
-#define LIMIT 3.0   //ограничения дипозона 
+#define SIGMA_ACCEL (1.29)//значение сигма для генерации
+#define LIMIT (3.0)   //ограничения дипозона 
 
 void generate_normal_accel(double *values, int n)//генерация случайных значений нормальным распределением
 {

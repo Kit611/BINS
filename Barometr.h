@@ -8,8 +8,8 @@
 #include <unistd.h>
 #include <sqlite3.h>
 
-#define SIGMA_BAR 0.025 //значение сигма для генерации
-#define LIMIT 3.0   //ограничение диапозона
+#define SIGMA_BAR (0.025) //значение сигма для генерации
+#define LIMIT (3.0)   //ограничение диапозона
 
 void generate_normal_bar(double *values, int n)//генерация случайных значений нормальным распределением
 {

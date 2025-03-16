@@ -8,8 +8,8 @@
 #include <unistd.h>
 #include <sqlite3.h>
 
-#define SIGMA_MAG 0.22//значение сигма для генерации
-#define LIMIT 3.0   //ограничение диапозона
+#define SIGMA_MAG (0.22)//значение сигма для генерации
+#define LIMIT (3.0)   //ограничение диапозона
 #define DEG_TO_RAD (M_PI / 180.0)//для перевода в радианы
 
 void generate_normal_mag(double *values, int n)//генерация случайных значений нормальным распределением
