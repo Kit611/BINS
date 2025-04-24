@@ -11,20 +11,20 @@
 #define SIGMA_GYRO (0.135) // значение сигма для генерации
 #define LIMIT (3.0)        // ограничения дипозона
 
-void generate_normal_gyro(float *values, int n) // генерация случайных значений нормальным распределением
+void generate_normal_gyro(double *values, int n) // генерация случайных значений нормальным распределением
 {
     int i = 0;
     while (i < n)
     {
-        float u1, u2, s, z0, z1;
+        double u1, u2, s, z0, z1;
         do
         {
-            u1 = ((float)rand() / RAND_MAX) * 2.0 - 1.0;
-            u2 = ((float)rand() / RAND_MAX) * 2.0 - 1.0;
+            u1 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+            u2 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
             s = u1 * u1 + u2 * u2;
         } while (s >= 1 || s == 0);
 
-        float factor = sqrt(-2.0 * log(s) / s);
+        double factor = sqrt(-2.0 * log(s) / s);
         z0 = u1 * factor * SIGMA_GYRO;
         z1 = u2 * factor * SIGMA_GYRO;
         if (z0 < -LIMIT * SIGMA_GYRO)
@@ -41,39 +41,39 @@ void generate_normal_gyro(float *values, int n) // генерация случа
     }
 }
 
-void integrade_angle(float *x_Csek, float *y_Csek, float *z_Csek, float Dt)
+void integrade_angle(double *x_Csek, double *y_Csek, double *z_Csek, double Dt)
 {
-    float angle = 0;
+    double angle = 0;
     *x_Csek = angle + *x_Csek * Dt;
     *y_Csek = angle + *y_Csek * Dt;
     *z_Csek = angle + *z_Csek * Dt;
 }
 
-float data_gyro(float *vox_Csec, float *voy_Csec, float *voz_Csek, float ox_c, float oy_c, float oz_c, int num, int time_request, int count, float *data_roll_grad, float *data_pitch_grad, float *data_yaw_grad) // главная функция
+double data_gyro(double *vox_Csec, double *voy_Csec, double *voz_Csek, double ox_c, double oy_c, double oz_c, int num, int time_request, int count, double *data_roll_grad, double *data_pitch_grad, double *data_yaw_grad) // главная функция
 {
     srand(time(NULL));
-    float *values = (float *)malloc(count * sizeof(float)); // массив для сл значений
+    double *values = (double *)malloc(count * sizeof(double)); // массив для сл значений
     if (values == NULL)
     {
         fprintf(stderr, "Ошибка выделения памяти\n");
         return 1;
     }
     generate_normal_gyro(values, count);
-    float x_calibration_C;
-    float y_calibration_C;
-    float z_calibration_C;
-    float vx = *vox_Csec;
-    float vy = *voy_Csec;
-    float vz = *voz_Csek;
-    float Vx = vx, Vy = vy, Vz = vz;
+    double x_calibration_C;
+    double y_calibration_C;
+    double z_calibration_C;
+    double vx = *vox_Csec;
+    double vy = *voy_Csec;
+    double vz = *voz_Csek;
+    double Vx = vx, Vy = vy, Vz = vz;
     if (num == 3)
     {
         if (*vox_Csec != 0 || *voy_Csec != 0 || *voz_Csek != 0)
         {
-            float x_Csek = *vox_Csec;
-            float y_Csek = *voy_Csec;
-            float z_Csek = *voz_Csek;
-            float DT = 1;
+            double x_Csek = *vox_Csec;
+            double y_Csek = *voy_Csec;
+            double z_Csek = *voz_Csek;
+            double DT = 1;
             integrade_angle(&x_Csek, &y_Csek, &z_Csek, DT);
             x_calibration_C = x_Csek;
             y_calibration_C = y_Csek;
@@ -99,9 +99,9 @@ float data_gyro(float *vox_Csec, float *voy_Csec, float *voz_Csek, float ox_c, f
         z_calibration_C = 0;
     }
 
-    float Roll_Csec = x_calibration_C;
-    float Pitch_Csec = y_calibration_C; // для того чтобы основное число не менялось, а менялся только шум
-    float Yaw_Csec = x_calibration_C;
+    double Roll_Csec = x_calibration_C;
+    double Pitch_Csec = y_calibration_C; // для того чтобы основное число не менялось, а менялся только шум
+    double Yaw_Csec = x_calibration_C;
     if (time_request == 0)
     {
         x_calibration_C += values[0];

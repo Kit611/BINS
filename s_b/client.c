@@ -10,24 +10,27 @@
 #pragma pack(push, 1)
 typedef struct
 {
-    uint16_t length;    // 2 байт - 16 бит
-    uint64_t Time_nsec; // 8 байт - 64 бита
-    float h_mbar;       // 4 байта - 32 бита
-    float ox_c;
-    float oy_c;
-    float oz_c;
-    float vx_msec;
-    float vy_msec;
-    float vz_msec;
-    float vox_csec;
-    float voy_csec;
-    float voz_csec;
-    float ax_m2sec;
-    float ay_m2sec;
-    float az_m2sec;
-    uint16_t x_mG;
-    uint16_t y_mG;
-    uint16_t z_mG;
+    // 2 байт - 16 бит
+    int length;
+    // 8 байт - 64 бита
+    uint64_t Time_nsec;
+    // 2 байта - 16 бита
+    int h_mbar;
+    int ox_c;
+    int oy_c;
+    int oz_c;
+    int vx_msec;
+    int vy_msec;
+    int vz_msec;
+    int vox_csec;
+    int voy_csec;
+    int voz_csec;
+    int ax_m2sec;
+    int ay_m2sec;
+    int az_m2sec;
+    int x_mG;
+    int y_mG;
+    int z_mG;
 } DataPacket;
 #pragma pack(pop)
 
@@ -76,22 +79,22 @@ int main()
             printf("Принят пакет:\n");
             printf("  Len: %d\n", packet.length);
             printf("  Time: %ld\n", packet.Time_nsec);
-            printf("  H_mbar: %.2f\n", packet.h_mbar);
-            printf("  Ox_c: %.2f\n", packet.ox_c);
-            printf("  Oy_c: %.2f\n", packet.oy_c);
-            printf("  Oz_c: %.2f\n", packet.oz_c);
-            printf("  Vx_msec: %.2f\n", packet.vx_msec);
-            printf("  Vy_msec: %.2f\n", packet.vy_msec);
-            printf("  Vz_msec: %.2f\n", packet.vz_msec);
-            printf("  Vox_csec: %.2f\n", packet.vox_csec);
-            printf("  Voy_csec: %.2f\n", packet.voy_csec);
-            printf("  Voz_csec: %.2f\n", packet.voz_csec);
-            printf("  Ax_m2sec: %.2f\n", packet.ax_m2sec);
-            printf("  Ay_m2sec: %.2f\n", packet.ay_m2sec);
-            printf("  Az_m2sec: %.2f\n", packet.az_m2sec);
-            printf("  X_mG: %d\n", packet.x_mG);
-            printf("  Y_mG: %d\n", packet.y_mG);
-            printf("  Z_mG: %d\n", packet.z_mG);
+            printf("  H_mbar: %f\n", packet.h_mbar * 0.64);
+            printf("  Ox_c: %f\n", packet.ox_c * 0.32);
+            printf("  Oy_c: %f\n", packet.oy_c * 0.32);
+            printf("  Oz_c: %f\n", packet.oz_c * 0.32);
+            printf("  Vx_msec: %f\n", packet.vx_msec * 0.008);
+            printf("  Vy_msec: %f\n", packet.vy_msec * 0.008);
+            printf("  Vz_msec: %f\n", packet.vz_msec * 0.008);
+            printf("  Vox_csec: %f\n", packet.vox_csec * 0.32);
+            printf("  Voy_csec: %f\n", packet.voy_csec * 0.32);
+            printf("  Voz_csec: %f\n", packet.voz_csec * 0.32);
+            printf("  Ax_m2sec: %f\n", packet.ax_m2sec * 0.008);
+            printf("  Ay_m2sec: %f\n", packet.ay_m2sec * 0.008);
+            printf("  Az_m2sec: %f\n", packet.az_m2sec * 0.008);
+            printf("  X_mG: %f\n", packet.x_mG * 0.1);
+            printf("  Y_mG: %f\n", packet.y_mG * 0.1);
+            printf("  Z_mG: %f\n", packet.z_mG * 0.1);
         }
         else
         {

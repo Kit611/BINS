@@ -11,20 +11,20 @@
 #define SIGMA_ACCEL (1.29) // значение сигма для генерации
 #define LIMIT (3.0)        // ограничения дипозона
 
-void generate_normal_accel(float *values, int n) // генерация случайных значений нормальным распределением
+void generate_normal_accel(double *values, int n) // генерация случайных значений нормальным распределением
 {
     int i = 0;
     while (i < n)
     {
-        float u1, u2, s, z0, z1;
+        double u1, u2, s, z0, z1;
         do
         {
-            u1 = ((float)rand() / RAND_MAX) * 2.0 - 1.0;
-            u2 = ((float)rand() / RAND_MAX) * 2.0 - 1.0;
+            u1 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+            u2 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
             s = u1 * u1 + u2 * u2;
         } while (s >= 1 || s == 0);
 
-        float factor = sqrt(-2.0 * log(s) / s);
+        double factor = sqrt(-2.0 * log(s) / s);
         z0 = u1 * factor * SIGMA_ACCEL;
         z1 = u2 * factor * SIGMA_ACCEL;
         if (z0 < -LIMIT * SIGMA_ACCEL)
@@ -41,22 +41,22 @@ void generate_normal_accel(float *values, int n) // генерация случ�
     }
 }
 
-float integrate(float acceleration, float t_start, float t_end) // функция интегрирования для получения скорости
+double integrate(double acceleration, double t_start, double t_end) // функция интегрирования для получения скорости
 {
-    float dt = t_end - t_start;
-    float initial_velocity = 0;
-    float final_velocity = initial_velocity + acceleration * dt;
+    double dt = t_end - t_start;
+    double initial_velocity = 0;
+    double final_velocity = initial_velocity + acceleration * dt;
     return final_velocity;
 }
 
-float vx, vy, vz;
+double vx, vy, vz;
 
-float data_accel(float *aX_m2sec, float *aY_m2sec, float *aZ_m2sec, float vx_msec, float vy_msec, float vz_msec, int num, int time_request, int count, float *Y_axis_msec, float *X_axis_msec, float *Z_axis_msec) // главная функция
+double data_accel(double *aX_m2sec, double *aY_m2sec, double *aZ_m2sec, double vx_msec, double vy_msec, double vz_msec, int num, int time_request, int count, double *Y_axis_msec, double *X_axis_msec, double *Z_axis_msec) // главная функция
 {
     srand(time(NULL));
-    float *values = (float *)malloc(count * sizeof(float)); // массив для сл значений
-    // float *test = (float *)malloc(NUM_SAMPLES * sizeof(float));//массив для отправки итоговых значений для графика
-    float X_msec, Y_msec, Z_msec;
+    double *values = (double *)malloc(count * sizeof(double)); // массив для сл значений
+    // double *test = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для отправки итоговых значений для графика
+    double X_msec, Y_msec, Z_msec;
     if (values == NULL)
     {
         fprintf(stderr, "Ошибка выделения памяти\n");
@@ -67,9 +67,9 @@ float data_accel(float *aX_m2sec, float *aY_m2sec, float *aZ_m2sec, float vx_mse
     {
         if (*aX_m2sec != 0 || *aY_m2sec != 0 || *aZ_m2sec != 1 || *aZ_m2sec != -1)
         {
-            float t_start_x = time_request - 1, t_end_x = time_request;
-            float t_start_y = time_request - 1, t_end_y = time_request;
-            float t_start_z = time_request - 1, t_end_z = time_request;
+            double t_start_x = time_request - 1, t_end_x = time_request;
+            double t_start_y = time_request - 1, t_end_y = time_request;
+            double t_start_z = time_request - 1, t_end_z = time_request;
             X_msec = integrate(*aX_m2sec, t_start_x, t_end_x);
             Y_msec = integrate(*aY_m2sec, t_start_y, t_end_y); // преобразование в скорость
             Z_msec = integrate(*aZ_m2sec, t_start_z, t_end_z);
@@ -108,13 +108,13 @@ float data_accel(float *aX_m2sec, float *aY_m2sec, float *aZ_m2sec, float vx_mse
         Y_msec = vy_msec;
         Z_msec = vz_msec;
     }
-    float x_msec = vx;
-    float y_msec = vy; // для того чтобы основное число не менялось, а менялся только шум
-    float z_msec = vz;
-    float ax = *aX_m2sec;
-    float ay = *aY_m2sec;
-    float az = *aZ_m2sec;
-    float aX = ax, aY = ay, aZ = az;
+    double x_msec = vx;
+    double y_msec = vy; // для того чтобы основное число не менялось, а менялся только шум
+    double z_msec = vz;
+    double ax = *aX_m2sec;
+    double ay = *aY_m2sec;
+    double az = *aZ_m2sec;
+    double aX = ax, aY = ay, aZ = az;
 
     if (time_request == 0)
     {

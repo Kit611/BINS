@@ -6,7 +6,7 @@
 #include <time.h>
 #include <string.h>
 // ми 8мт "Метео"
-#define TIME_WORK (100)   // время работы минуты(секунды)
+#define TIME_WORK (100)   // время работы минуты
 #define MAX_HEIGHT (4500) // максимальная высота(150)
 #define MIN_HEIGHT (10)   // минимальная высота
 #define MAX_SPEED (64)    // максимальная горизонтальная сокрость(64 м/с, 230км/ч)13
@@ -17,26 +17,28 @@
 
 int time_sec;
 
-int get_time() // передача времени
+// передача времени
+int get_time()
 {
     return time_sec;
 }
 
 int flight(int num_model)
 {
-    time_sec = TIME_WORK * 60;
-    char direction[15] = "North";
-    const float g_m2Sec = 1;
-    float h_m = 0;
-    float X = 0;
-    float Y = 0;
-    float ox_c = 0, oy_c = 0, oz_c = 0;
-    float vx_msec = 0, vy_msec = 0, vz_msec = 0;
-    float vox_csec = 0, voy_csec = 0, voz_csec = 0;
-    float ax_m2sec = 0, ay_m2sec = 0, az_m2sec = g_m2Sec;
-    float Bx_G = 0.14451, By_G = 0.03056, Bz_G = 0.50904;
+    time_sec = TIME_WORK * 60; // 6000000000000
+    char direction[5] = "North";
+    const double g_m2Sec = 1;
+    double h_m = 0;
+    double X = 0;
+    double Y = 0;
+    double ox_c = 0, oy_c = 0, oz_c = 0;
+    double vx_msec = 0, vy_msec = 0, vz_msec = 0;
+    double vox_csec = 0, voy_csec = 0, voz_csec = 0;
+    double ax_m2sec = 0, ay_m2sec = 0, az_m2sec = g_m2Sec;
+    double Bx_G = 0.14451, By_G = 0.03056, Bz_G = 0.50904;
     const char *sql = "INSERT INTO model_flight VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20)";
-    switch (num_model) // генерация значения в зависимости от модели полета
+    // генерация значения в зависимости от модели полета
+    switch (num_model)
     {
     case 1:
         printf("Модель висения.\n");
@@ -411,6 +413,7 @@ int flight(int num_model)
                 char *pos = strstr(direction, "North");
                 if (pos != NULL)
                 {
+                    memset(direction, 0, sizeof(direction));
                     memcpy(pos, "East", strlen("East"));
                 }
             }

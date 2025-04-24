@@ -16,49 +16,53 @@
 #pragma pack(push, 1)
 typedef struct
 {
-    uint16_t length;    // 2 байт - 16 бит
-    uint64_t Time_nsec; // 8 байт - 64 бита
-    float h_mbar;       // 4 байта - 32 бита
-    float ox_c;
-    float oy_c;
-    float oz_c;
-    float vx_msec;
-    float vy_msec;
-    float vz_msec;
-    float vox_csec;
-    float voy_csec;
-    float voz_csec;
-    float ax_m2sec;
-    float ay_m2sec;
-    float az_m2sec;
-    uint16_t x_mG;
-    uint16_t y_mG;
-    uint16_t z_mG;
+    // 2 байт - 16 бит
+    int length;
+    // 8 байт - 64 бита
+    uint64_t Time_nsec;
+    // 2 байта - 16 бита
+    int h_mbar;
+    int ox_c;
+    int oy_c;
+    int oz_c;
+    int vx_msec;
+    int vy_msec;
+    int vz_msec;
+    int vox_csec;
+    int voy_csec;
+    int voz_csec;
+    int ax_m2sec;
+    int ay_m2sec;
+    int az_m2sec;
+    int x_mG;
+    int y_mG;
+    int z_mG;
 } DataPacket;
 #pragma pack(pop)
 
-void send_data(float h_m, float ox_c, float oy_c, float oz_c, float vx_msec, float vy_msec, float vz_msec, float vox_csec, float voy_csec, float voz_csec, float ax_m2sec, float ay_m2sec, float az_m2sec, uint16_t x_mG, uint16_t y_mG, uint16_t z_mG, size_t size, const char *host) // отправка случайных значений для отрисовки графика по udp
+// отправка случайных значений для отрисовки графика по udp
+void send_data(double h_m, double ox_c, double oy_c, double oz_c, double vx_msec, double vy_msec, double vz_msec, double vox_csec, double voy_csec, double voz_csec, double ax_m2sec, double ay_m2sec, double az_m2sec, double x_mG, double y_mG, double z_mG, size_t size, const char *host)
 {
     struct timespec ts;
     timespec_get(&ts, TIME_UTC);
     DataPacket packet;
     packet.Time_nsec = ts.tv_nsec;
-    packet.h_mbar = h_m;
-    packet.ox_c = ox_c;
-    packet.oy_c = oy_c;
-    packet.oz_c = oz_c;
-    packet.vx_msec = vx_msec;
-    packet.vy_msec = vy_msec;
-    packet.vz_msec = vz_msec;
-    packet.vox_csec = vox_csec;
-    packet.voy_csec = voy_csec;
-    packet.voz_csec = voz_csec;
-    packet.ax_m2sec = ax_m2sec;
-    packet.ay_m2sec = ay_m2sec;
-    packet.az_m2sec = az_m2sec;
-    packet.x_mG = x_mG;
-    packet.y_mG = y_mG;
-    packet.z_mG = z_mG;
+    packet.h_mbar = (int)(h_m / 0.64);
+    packet.ox_c = (int)(ox_c / 0.32);
+    packet.oy_c = (int)(oy_c / 0.32);
+    packet.oz_c = (int)(oz_c / 0.32);
+    packet.vx_msec = (int)(vx_msec / 0.008);
+    packet.vy_msec = (int)(vy_msec / 0.008);
+    packet.vz_msec = (int)(vz_msec / 0.008);
+    packet.vox_csec = (int)(vox_csec / 0.32);
+    packet.voy_csec = (int)(voy_csec / 0.32);
+    packet.voz_csec = (int)(voz_csec / 0.32);
+    packet.ax_m2sec = (int)(ax_m2sec / 0.008);
+    packet.ay_m2sec = (int)(ay_m2sec / 0.008);
+    packet.az_m2sec = (int)(az_m2sec / 0.008);
+    packet.x_mG = (int)(x_mG / 0.1);
+    packet.y_mG = (int)(y_mG / 0.1);
+    packet.z_mG = (int)(z_mG / 0.1);
     packet.length = sizeof(DataPacket);
     int sock;
     struct sockaddr_in server_addr;
@@ -85,7 +89,7 @@ void send_data(float h_m, float ox_c, float oy_c, float oz_c, float vx_msec, flo
 }
 
 // получение из бд
-int data_bd(int time_request, int *time, float *X, float *Y, float *h_m, char **direction, float *ox_c, float *oy_c, float *oz_c, float *vx_msec, float *vy_msec, float *vz_msec, float *vox_csec, float *voy_csec, float *voz_csec, float *ax_m2sec, float *ay_m2sec, float *az_m2sec, float *Bx_G, float *By_G, float *Bz_G) // получение данных из бд
+int data_bd(int time_request, int *time, double *X, double *Y, double *h_m, char **direction, double *ox_c, double *oy_c, double *oz_c, double *vx_msec, double *vy_msec, double *vz_msec, double *vox_csec, double *voy_csec, double *voz_csec, double *ax_m2sec, double *ay_m2sec, double *az_m2sec, double *Bx_G, double *By_G, double *Bz_G) // получение данных из бд
 {
     sqlite3 *db;
     sqlite3_stmt *res;
@@ -133,7 +137,7 @@ int data_bd(int time_request, int *time, float *X, float *Y, float *h_m, char **
     return 0;
 }
 // запись в бд
-int write_bd(int time, float X, float Y, float h_mbar, char **direction, float roll_grad, float pitch_grad, float yaw_grad, float X_axis_m_sec, float Y_axis_m_sec, float Z_axis_m_sec, float vox_csec, float voy_csec, float voz_csec, float ax_m2sec, float ay_m2sec, float az_m2sec, float x_mG, float y_mG, float z_mG, float declination_c, float inclination_c)
+int write_bd(int time, double X, double Y, double h_mbar, char **direction, double roll_grad, double pitch_grad, double yaw_grad, double X_axis_m_sec, double Y_axis_m_sec, double Z_axis_m_sec, double vox_csec, double voy_csec, double voz_csec, double ax_m2sec, double ay_m2sec, double az_m2sec, double x_mG, double y_mG, double z_mG, double declination_c, double inclination_c)
 {
     sqlite3 *db;
     sqlite3_stmt *res;
@@ -152,7 +156,7 @@ int write_bd(int time, float X, float Y, float h_mbar, char **direction, float r
         sqlite3_bind_double(res, 2, X);
         sqlite3_bind_double(res, 3, Y);
         sqlite3_bind_double(res, 4, h_mbar);
-        sqlite3_bind_text(res, 5, *direction, 15, SQLITE_STATIC);
+        sqlite3_bind_text(res, 5, *direction, -1, SQLITE_STATIC);
         sqlite3_bind_double(res, 6, roll_grad);
         sqlite3_bind_double(res, 7, pitch_grad);
         sqlite3_bind_double(res, 8, yaw_grad);
@@ -189,7 +193,8 @@ int main(void)
     while (true)
     {
         printf("Введите модель полета(1-Висение;2-Линейный полет;3-взлет->движение->посадка;4-движение с поворотом;5-равномерное движение с маневром): ");
-        scanf("%d", &num_model); // выбор модели полета
+        // выбор модели полета
+        scanf("%d", &num_model);
         if (num_model == 1 || num_model == 2 || num_model == 3 || num_model == 4 || num_model == 5)
         {
             break;
@@ -199,17 +204,22 @@ int main(void)
             printf("Такой модели полета нет. Введите еще раз\n");
         }
     }
-    flight(num_model);    // вызов модели полета
-    int time_request = 0; // время запроса
-    int time_sec;         // время которое возвращается
-    float X, Y, h_m, ox_c, oy_c, oz_c, vx_msec, vy_msec, vz_msec, vox_csec, voy_csec, voz_csec, ax_m2sec, ay_m2sec, az_m2sec, Bx_G, By_G, Bz_G, declination_c = 0, inclination_c = 0;
-    char *direction = malloc(15);
-    float sys_er;
-    int work_time = get_time(); // время работы
+    // вызов модели полета
+    flight(num_model);
+    // время запроса
+    int time_request = 0;
+    // время которое возвращается
+    int time_sec;
+    double X, Y, h_m, ox_c, oy_c, oz_c, vx_msec, vy_msec, vz_msec, vox_csec, voy_csec, voz_csec, ax_m2sec, ay_m2sec, az_m2sec, Bx_G, By_G, Bz_G, declination_c = 0, inclination_c = 0;
+    char *direction = malloc(5);
+    double sys_er;
+    // время работы
+    int work_time = get_time();
     while (true)
     {
         printf("Введите погрешность от -4.5 до 4.5: ");
-        scanf("%f", &sys_er); // ввод системной ошибки
+        // ввод системной ошибки
+        scanf("%lf", &sys_er);
         if (sys_er >= -4.5 && sys_er <= 4.5)
         {
             break;
@@ -219,26 +229,27 @@ int main(void)
             printf("Неверная системная ошибка. Введите еще раз\n");
         }
     }
-    int NUM_SAMPLES = 2;
-    size_t size = NUM_SAMPLES;
+    // int NUM_SAMPLES = 2;
+    // size_t size = NUM_SAMPLES;
     printf("%-10s| %-10s|%-42s | %-43s | %-40s | %s\n", "Время(сек):", "Курс:", "Гироскоп(град):", "Акселерометр(g):", "Магнетометер(mG):", "Барометр(mbar):");
     for (int i = 0; i < work_time; i++)
     {
         data_bd(time_request, &time_sec, &X, &Y, &h_m, &direction, &ox_c, &oy_c, &oz_c, &vx_msec, &vy_msec, &vz_msec, &vox_csec, &voy_csec, &voz_csec, &ax_m2sec, &ay_m2sec, &az_m2sec, &Bx_G, &By_G, &Bz_G);
-        float data_roll_grad, data_pitch_grad, data_yaw_grad;
-        float Y_axis_m_sec, Z_axis_m_sec, X_axis_m_sec;
-        float data_x_mG, data_y_mG, data_z_mG;
-        data_gyro(&vox_csec, &voy_csec, &voz_csec, ox_c, oy_c, oz_c, num_model, time_request, work_time, &data_roll_grad, &data_pitch_grad, &data_yaw_grad);                     // данные с гироскопа
-        data_accel(&ax_m2sec, &ay_m2sec, &az_m2sec, vx_msec, vy_msec, vz_msec, num_model, time_request, work_time, &Y_axis_m_sec, &X_axis_m_sec, &Z_axis_m_sec);                 // данные с акселерометра
-        data_mag(Bx_G, By_G, Bz_G, data_roll_grad, data_pitch_grad, data_yaw_grad, time_request, work_time, &data_x_mG, &data_y_mG, &data_z_mG, &declination_c, &inclination_c); // данные с магнетометра
-        float bar_mbar = data_bar(h_m, sys_er, time_request, work_time);                                                                                                         // данные с барометра
+        double data_roll_grad, data_pitch_grad, data_yaw_grad;
+        double Y_axis_m_sec, Z_axis_m_sec, X_axis_m_sec;
+        double data_x_mG, data_y_mG, data_z_mG;
+        // данные с гироскопа
+        data_gyro(&vox_csec, &voy_csec, &voz_csec, ox_c, oy_c, oz_c, num_model, time_request, work_time, &data_roll_grad, &data_pitch_grad, &data_yaw_grad);
+        // данные с акселерометра
+        data_accel(&ax_m2sec, &ay_m2sec, &az_m2sec, vx_msec, vy_msec, vz_msec, num_model, time_request, work_time, &Y_axis_m_sec, &X_axis_m_sec, &Z_axis_m_sec);
+        // данные с магнетометра
+        data_mag(Bx_G, By_G, Bz_G, data_roll_grad, data_pitch_grad, data_yaw_grad, time_request, work_time, &data_x_mG, &data_y_mG, &data_z_mG, &declination_c, &inclination_c);
+        // данные с барометра
+        double bar_mbar = data_bar(h_m, sys_er, time_request, work_time);
         printf("%-10d | %-10s | (%f;%f;%f) | (%f;%f;%f) | (%f;%f;%f) | %f\n", i, direction, data_roll_grad, data_pitch_grad, data_yaw_grad, X_axis_m_sec, Y_axis_m_sec, Z_axis_m_sec, data_x_mG, data_y_mG, data_z_mG, bar_mbar);
         time_request++;
         write_bd(i, X, Y, bar_mbar, &direction, data_roll_grad, data_pitch_grad, data_yaw_grad, X_axis_m_sec, Y_axis_m_sec, Z_axis_m_sec, vox_csec, voy_csec, voz_csec, ax_m2sec, ay_m2sec, az_m2sec, data_x_mG, data_y_mG, data_z_mG, declination_c, inclination_c);
-        int x_mG = (int)data_x_mG;
-        int y_mG = (int)data_y_mG;
-        int z_mg = (int)data_z_mG;
-        send_data(bar_mbar, data_roll_grad, data_pitch_grad, data_yaw_grad, X_axis_m_sec, Y_axis_m_sec, Z_axis_m_sec, vox_csec, voy_csec, voz_csec, ax_m2sec, ay_m2sec, az_m2sec, x_mG, y_mG, z_mg, size, SERVER_IP);
+        send_data(bar_mbar, data_roll_grad, data_pitch_grad, data_yaw_grad, X_axis_m_sec, Y_axis_m_sec, Z_axis_m_sec, vox_csec, voy_csec, voz_csec, ax_m2sec, ay_m2sec, az_m2sec, data_x_mG, data_y_mG, data_z_mG, 2, SERVER_IP);
     }
     free(direction);
     return 0;
