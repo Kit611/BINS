@@ -10,12 +10,9 @@
 #pragma pack(push, 1)
 typedef struct
 {
-    // 2 байт - 16 бит
-    int length;
-    // 8 байт - 64 бита
-    uint64_t Time_nsec;
-    // 2 байта - 16 бита
-    int h_mbar;
+    int length;         // 2 байт - 16 бит
+    uint64_t Time_nsec; // 8 байт - 64 бита
+    int h_mbar;         // 2 байта - 16 бита
     int ox_c;
     int oy_c;
     int oz_c;
@@ -95,6 +92,22 @@ int main()
             printf("  X_mG: %f\n", packet.x_mG * 0.1);
             printf("  Y_mG: %f\n", packet.y_mG * 0.1);
             printf("  Z_mG: %f\n", packet.z_mG * 0.1);
+            // printf("  H_mbar: %f\n", packet.h_mbar);
+            // printf("  Ox_c: %f\n", packet.ox_c);
+            // printf("  Oy_c: %f\n", packet.oy_c);
+            // printf("  Oz_c: %f\n", packet.oz_c);
+            // printf("  Vx_msec: %f\n", packet.vx_msec);
+            // printf("  Vy_msec: %f\n", packet.vy_msec);
+            // printf("  Vz_msec: %f\n", packet.vz_msec);
+            // printf("  Vox_csec: %f\n", packet.vox_csec);
+            // printf("  Voy_csec: %f\n", packet.voy_csec);
+            // printf("  Voz_csec: %f\n", packet.voz_csec);
+            // printf("  Ax_m2sec: %f\n", packet.ax_m2sec);
+            // printf("  Ay_m2sec: %f\n", packet.ay_m2sec);
+            // printf("  Az_m2sec: %f\n", packet.az_m2sec);
+            // printf("  X_mG: %f\n", packet.x_mG);
+            // printf("  Y_mG: %f\n", packet.y_mG);
+            // printf("  Z_mG: %f\n", packet.z_mG);
         }
         else
         {

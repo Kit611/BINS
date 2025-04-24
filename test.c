@@ -156,115 +156,15 @@
 
 //     return 0;
 // }
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <time.h>
-
-// int main()
-// {
-//     srand(time(NULL));
-//     int ch = 1 + rand() % 15;
-//     int ch_g = ch * 1000000;
-//     float mag_g = (ch_g / 24);
-//     float bar_g = (ch_g / 48);
-//     float mag = mag_g / 1000000;
-//     float bar = bar_g / 1000000;
-//     printf("%d\n", ch);
-//     printf("%d\n", ch_g);
-//     printf("%.4f\n", mag);
-//     printf("%.4f\n", bar);
-//===============================
-// int ch = 1 + rand() % 15;
-// int ch_g = ch * 1000000;
-// float mag_g = (ch_g / 24);
-// float bar_g = (ch_g / 48);
-// float period_ns = (long)(1e9 / ch_g); // 1 секунда = 1e9 наносекунд
-// float period_s = period_ns / 1000000000;
-// float bar_period_ns = (long)(1e9 / bar_g);
-// float bar_period_s = bar_period_ns / 1000000000;
-// float mag_period_ns = (long)(1e9 / mag_g);
-// float mag_period_s = mag_period_ns / 1000000000;
-// struct timespec last_update;
-// clock_gettime(CLOCK_MONOTONIC, &last_update);
-//=======================================
-// }
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
-
-#define NUM_SENSORS 4
-
-// Структура для хранения информации о датчике
-typedef struct
-{
-    char name[20];
-    double frequency; // Частота в Гц
-    long period_ns;   // Период в наносекундах
-} Sensor;
-
-// Функция для генерации данных датчика
-double generate_data(Sensor sensor)
-{
-    // Генерация случайных данных (например, от 0 до 100)
-    return (double)(rand() % 101);
-}
-
-// Функция для отображения данных
-void display_data(Sensor sensor)
-{
-    double data = generate_data(sensor);
-    printf("Датчик: %s, Частота: %.2f Гц, Данные: %.2f\n",
-           sensor.name, sensor.frequency, data);
-}
 
 int main()
 {
-    Sensor sensors[NUM_SENSORS] = {
-        {"Датчик 1", 2.0},  // 2 Гц (период 500000000 наносекунд)
-        {"Датчик 2", 5.0},  // 5 Гц (период 200000000 наносекунд)
-        {"Датчик 3", 10.0}, // 10 Гц (период 100000000 наносекунд)
-        {"Датчик 4", 1.0}   // 1 Гц (период 1000000000 наносекунд)
-    };
-
-    // Вычисляем период для каждого датчика в наносекундах
-    for (int i = 0; i < NUM_SENSORS; i++)
+    int count = 0;
+    double dt = 0.005;
+    for (double i = 0; i < 1; i += dt)
     {
-        sensors[i].period_ns = (long)(1e9 / sensors[i].frequency); // 1 секунда = 1e9 наносекунд
+        count++;
+        printf("%.3f : %d\n", i, count);
     }
-
-    // Время последнего обновления для каждого датчика
-    struct timespec last_update[NUM_SENSORS];
-    for (int i = 0; i < NUM_SENSORS; i++)
-    {
-        clock_gettime(CLOCK_MONOTONIC, &last_update[i]);
-    }
-
-    while (1)
-    {
-        struct timespec current_time;
-        clock_gettime(CLOCK_MONOTONIC, &current_time); // Получаем текущее время
-
-        // Проверяем каждый датчик
-        for (int i = 0; i < NUM_SENSORS; i++)
-        {
-            long elapsed_ns = (current_time.tv_sec - last_update[i].tv_sec) * 1e9 +
-                              (current_time.tv_nsec - last_update[i].tv_nsec);
-
-            // Если прошло достаточно времени, чтобы обновить данные
-            if (elapsed_ns >= sensors[i].period_ns)
-            {
-                display_data(sensors[i]);      // Показываем данные от датчика
-                last_update[i] = current_time; // Обновляем время последнего обновления
-            }
-        }
-
-        // Задержка для предотвращения чрезмерной загрузки процессора
-        // struct timespec sleep_time;
-        // sleep_time.tv_sec = 0;
-        // sleep_time.tv_nsec = 100000; // Задержка на 100 микросекунд
-        // nanosleep(&sleep_time, NULL);
-    }
-
-    return 0;
 }

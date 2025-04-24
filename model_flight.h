@@ -25,7 +25,7 @@ int get_time()
 
 int flight(int num_model)
 {
-    time_sec = TIME_WORK * 60; // 6000000000000
+    time_sec = TIME_WORK * 60;
     char direction[5] = "North";
     const double g_m2Sec = 1;
     double h_m = 0;
@@ -37,8 +37,7 @@ int flight(int num_model)
     double ax_m2sec = 0, ay_m2sec = 0, az_m2sec = g_m2Sec;
     double Bx_G = 0.14451, By_G = 0.03056, Bz_G = 0.50904;
     const char *sql = "INSERT INTO model_flight VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20)";
-    // генерация значения в зависимости от модели полета
-    switch (num_model)
+    switch (num_model) // генерация значений в зависимости от модели полета
     {
     case 1:
         printf("Модель висения.\n");

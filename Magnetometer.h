@@ -12,34 +12,47 @@
 #define LIMIT (3.0)               // ограничение диапозона
 #define DEG_TO_RAD (M_PI / 180.0) // для перевода в радианы
 
-void generate_normal_mag(double *values, int n) // генерация случайных значений нормальным распределением
+// генерация случайных значений нормальным распределением
+// void generate_normal_mag(double *values, int n)
+double generate_normal_mag()
 {
-    int i = 0;
-    while (i < n)
-    {
-        double u1, u2, s, z0, z1;
-        do
-        {
-            u1 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
-            u2 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
-            s = u1 * u1 + u2 * u2;
-        } while (s >= 1 || s == 0);
+    // int i = 0;
+    // while (i < n)
+    // {
+    static int has_spare = 0;
+    static double spare;
 
-        double factor = sqrt(-2.0 * log(s) / s);
-        z0 = u1 * factor * SIGMA_MAG;
-        z1 = u2 * factor * SIGMA_MAG;
-        if (z0 < -LIMIT * SIGMA_MAG)
-            z0 = -LIMIT * SIGMA_MAG;
-        if (z0 > LIMIT * SIGMA_MAG)
-            z0 = LIMIT * SIGMA_MAG;
-        if (z1 < -LIMIT * SIGMA_MAG)
-            z1 = -LIMIT * SIGMA_MAG;
-        if (z1 > LIMIT * SIGMA_MAG)
-            z1 = LIMIT * SIGMA_MAG;
-        values[i++] = z0;
-        if (i < n)
-            values[i++] = z1;
+    if (has_spare)
+    {
+        has_spare = 0;
+        return spare;
     }
+    double u1, u2, s, z0, z1;
+    do
+    {
+        u1 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+        u2 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+        s = u1 * u1 + u2 * u2;
+    } while (s >= 1 || s == 0);
+
+    double factor = sqrt(-2.0 * log(s) / s);
+    z0 = u1 * factor * SIGMA_MAG;
+    z1 = u2 * factor * SIGMA_MAG;
+    if (z0 < -LIMIT * SIGMA_MAG)
+        z0 = -LIMIT * SIGMA_MAG;
+    if (z0 > LIMIT * SIGMA_MAG)
+        z0 = LIMIT * SIGMA_MAG;
+    if (z1 < -LIMIT * SIGMA_MAG)
+        z1 = -LIMIT * SIGMA_MAG;
+    if (z1 > LIMIT * SIGMA_MAG)
+        z1 = LIMIT * SIGMA_MAG;
+    spare = z1;
+    has_spare = 1;
+    return z0;
+    //     values[i++] = z0;
+    //     if (i < n)
+    //         values[i++] = z1;
+    // }
 }
 
 // расчет матрицы поворота
@@ -82,20 +95,15 @@ double calculate_inclination(double mx, double my, double mz)
     return inclination * (180 / M_PI); // Возвращаем угол наклонения в градусах
 }
 
-double mag_napr(double x, double y) // магнитное направление
+// магнитное направление
+double mag_napr(double x, double y)
 {
     return atan2(y, x);
 }
 
-double data_mag(double Bx_G, double By_G, double Bz_G, double roll_C, double pitch_C, double yaw_C, int time_request, int count, double *data_x_mG, double *data_y_mG, double *data_z_mG, double *declination_c, double *inclination_c) // главная фукнция
+double data_mag(double Bx_G, double By_G, double Bz_G, double roll_C, double pitch_C, double yaw_C, double time_request, int count, double *data_x_mG, double *data_y_mG, double *data_z_mG, double *declination_c, double *inclination_c)
 {
     srand(time(NULL));
-    double *values = (double *)malloc(count * sizeof(double)); // массив для сл значений
-    if (values == NULL)
-    {
-        fprintf(stderr, "Ошибка выделения памяти\n");
-        return 1;
-    }
     double R[3][3];
     double x_G, y_G, z_G;
     compute_rotation_matrix(yaw_C, pitch_C, roll_C, R);              // расчет поворотной матрицы
@@ -106,57 +114,9 @@ double data_mag(double Bx_G, double By_G, double Bz_G, double roll_C, double pit
     double X_mG = x_mG;
     double Y_mG = y_mG; // для того чтобы основное число не менялось, а менялся только шум
     double Z_mG = z_mG;
-    if (time_request == 0) // добавление шума
-    {
-        x_mG += values[0];
-        y_mG += values[45];
-        z_mG += values[56];
-        *data_x_mG = x_mG;
-        *data_y_mG = y_mG;
-        *data_z_mG = z_mG;
-        x_mG = X_mG;
-        y_mG = Y_mG;
-        z_mG = Z_mG;
-    }
-    else if (time_request == 1)
-    {
-        x_mG += values[1];
-        y_mG += values[12];
-        z_mG += values[76];
-        *data_x_mG = x_mG;
-        *data_y_mG = y_mG;
-        *data_z_mG = z_mG;
-        x_mG = X_mG;
-        y_mG = Y_mG;
-        z_mG = Z_mG;
-    }
-    else if (time_request == 2)
-    {
-        x_mG += values[2];
-        y_mG += values[48];
-        z_mG += values[98];
-        *data_x_mG = x_mG;
-        *data_y_mG = y_mG;
-        *data_z_mG = z_mG;
-        x_mG = X_mG;
-        y_mG = Y_mG;
-        z_mG = Z_mG;
-    }
-    else
-    {
-        for (int i = 0; i < time_request; i++)
-        {
-            x_mG += values[i];
-            y_mG += values[i - 1];
-            z_mG += values[i - 2];
-            *data_x_mG = x_mG;
-            *data_y_mG = y_mG;
-            *data_z_mG = z_mG;
-            x_mG = X_mG;
-            y_mG = Y_mG;
-            z_mG = Z_mG;
-        }
-    }
+    *data_x_mG += generate_normal_mag();
+    *data_y_mG += generate_normal_mag();
+    *data_z_mG += generate_normal_mag();
     double data_xmG = abs(*data_x_mG);
     double data_ymG = abs(*data_y_mG);
     double data_zmG = abs(*data_z_mG);
@@ -184,7 +144,7 @@ double data_mag(double Bx_G, double By_G, double Bz_G, double roll_C, double pit
         return 1;
     }
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO Magnetometer VALUES (%d,%f,%f,%f,%f,%f,%f)", time_request, *data_x_mG, *data_y_mG, *data_z_mG, declination_grad, inclination_grad, true_dir_grad);
+    snprintf(sql, sizeof(sql), "INSERT INTO Magnetometer VALUES (%f,%f,%f,%f,%f,%f,%f)", time_request, *data_x_mG, *data_y_mG, *data_z_mG, declination_grad, inclination_grad, true_dir_grad);
     rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
     if (rc != SQLITE_OK)
     {
@@ -194,5 +154,4 @@ double data_mag(double Bx_G, double By_G, double Bz_G, double roll_C, double pit
         return 1;
     }
     sqlite3_close(db);
-    free(values);
 }
