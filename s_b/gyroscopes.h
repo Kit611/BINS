@@ -11,34 +11,47 @@
 #define SIGMA_GYRO (0.135) // значение сигма для генерации
 #define LIMIT (3.0)        // ограничения дипозона
 
-void generate_normal_gyro(double *values, int n) // генерация случайных значений нормальным распределением
+// генерация случайных значений нормальным распределением
+// void generate_normal_gyro(double *values, int n)
+double generate_normal_gyro()
 {
-    int i = 0;
-    while (i < n)
-    {
-        double u1, u2, s, z0, z1;
-        do
-        {
-            u1 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
-            u2 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
-            s = u1 * u1 + u2 * u2;
-        } while (s >= 1 || s == 0);
+    // int i = 0;
+    // while (i < n)
+    // {
+    static int has_spare = 0;
+    static double spare;
 
-        double factor = sqrt(-2.0 * log(s) / s);
-        z0 = u1 * factor * SIGMA_GYRO;
-        z1 = u2 * factor * SIGMA_GYRO;
-        if (z0 < -LIMIT * SIGMA_GYRO)
-            z0 = -LIMIT * SIGMA_GYRO;
-        if (z0 > LIMIT * SIGMA_GYRO)
-            z0 = LIMIT * SIGMA_GYRO;
-        if (z1 < -LIMIT * SIGMA_GYRO)
-            z1 = -LIMIT * SIGMA_GYRO;
-        if (z1 > LIMIT * SIGMA_GYRO)
-            z1 = LIMIT * SIGMA_GYRO;
-        values[i++] = z0;
-        if (i < n)
-            values[i++] = z1;
+    if (has_spare)
+    {
+        has_spare = 0;
+        return spare;
     }
+    double u1, u2, s, z0, z1;
+    do
+    {
+        u1 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+        u2 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+        s = u1 * u1 + u2 * u2;
+    } while (s >= 1 || s == 0);
+
+    double factor = sqrt(-2.0 * log(s) / s);
+    z0 = u1 * factor * SIGMA_GYRO;
+    z1 = u2 * factor * SIGMA_GYRO;
+    if (z0 < -LIMIT * SIGMA_GYRO)
+        z0 = -LIMIT * SIGMA_GYRO;
+    if (z0 > LIMIT * SIGMA_GYRO)
+        z0 = LIMIT * SIGMA_GYRO;
+    if (z1 < -LIMIT * SIGMA_GYRO)
+        z1 = -LIMIT * SIGMA_GYRO;
+    if (z1 > LIMIT * SIGMA_GYRO)
+        z1 = LIMIT * SIGMA_GYRO;
+    spare = z1;
+    has_spare = 1;
+    return z0;
+    //     values[i++] = z0;
+    //     if (i < n)
+    //         values[i++] = z1;
+    // }
 }
 
 void integrade_angle(double *x_Csek, double *y_Csek, double *z_Csek, double Dt)
@@ -49,16 +62,9 @@ void integrade_angle(double *x_Csek, double *y_Csek, double *z_Csek, double Dt)
     *z_Csek = angle + *z_Csek * Dt;
 }
 
-double data_gyro(double *vox_Csec, double *voy_Csec, double *voz_Csek, double ox_c, double oy_c, double oz_c, int num, int time_request, int count, double *data_roll_grad, double *data_pitch_grad, double *data_yaw_grad) // главная функция
+double data_gyro(double *vox_Csec, double *voy_Csec, double *voz_Csek, double ox_c, double oy_c, double oz_c, int num, double time_request, int count, double *data_roll_grad, double *data_pitch_grad, double *data_yaw_grad)
 {
     srand(time(NULL));
-    double *values = (double *)malloc(count * sizeof(double)); // массив для сл значений
-    if (values == NULL)
-    {
-        fprintf(stderr, "Ошибка выделения памяти\n");
-        return 1;
-    }
-    generate_normal_gyro(values, count);
     double x_calibration_C;
     double y_calibration_C;
     double z_calibration_C;
@@ -66,7 +72,7 @@ double data_gyro(double *vox_Csec, double *voy_Csec, double *voz_Csek, double ox
     double vy = *voy_Csec;
     double vz = *voz_Csek;
     double Vx = vx, Vy = vy, Vz = vz;
-    if (num == 3)
+    if (num == 3 || num == 4 || num == 5)
     {
         if (*vox_Csec != 0 || *voy_Csec != 0 || *voz_Csek != 0)
         {
@@ -102,75 +108,12 @@ double data_gyro(double *vox_Csec, double *voy_Csec, double *voz_Csek, double ox
     double Roll_Csec = x_calibration_C;
     double Pitch_Csec = y_calibration_C; // для того чтобы основное число не менялось, а менялся только шум
     double Yaw_Csec = x_calibration_C;
-    if (time_request == 0)
-    {
-        x_calibration_C += values[0];
-        y_calibration_C += values[33];
-        z_calibration_C += values[65];
-        *vox_Csec += values[31];
-        *voy_Csec += values[12];
-        *voz_Csek += values[98];
-        *data_roll_grad = x_calibration_C;
-        *data_pitch_grad = y_calibration_C;
-        *data_yaw_grad = z_calibration_C;
-        x_calibration_C = Roll_Csec;
-        y_calibration_C = Pitch_Csec;
-        z_calibration_C = Yaw_Csec;
-    }
-    else if (time_request == 1)
-    {
-        x_calibration_C += values[1];
-        y_calibration_C += values[43];
-        z_calibration_C += values[86];
-        *vox_Csec += values[8];
-        *voy_Csec += values[73];
-        *voz_Csek += values[10];
-        *data_roll_grad = x_calibration_C;
-        *data_pitch_grad = y_calibration_C;
-        *data_yaw_grad = z_calibration_C;
-        x_calibration_C = Roll_Csec;
-        y_calibration_C = Pitch_Csec;
-        z_calibration_C = Yaw_Csec;
-    }
-    else if (time_request == 2)
-    {
-        x_calibration_C += values[3];
-        y_calibration_C += values[21];
-        z_calibration_C += values[62];
-        *vox_Csec += values[5];
-        *voy_Csec += values[72];
-        *voz_Csek += values[22];
-        *data_roll_grad = x_calibration_C;
-        *data_pitch_grad = y_calibration_C;
-        *data_yaw_grad = z_calibration_C;
-        x_calibration_C = Roll_Csec;
-        y_calibration_C = Pitch_Csec;
-        z_calibration_C = Yaw_Csec;
-    }
-    else
-    {
-        for (int i = 0; i < time_request; i++)
-        {
-            x_calibration_C += values[i];
-            y_calibration_C += values[i - 1];
-            z_calibration_C += values[i - 2];
-            vx += values[i];
-            vy += values[i];
-            vz += values[i];
-            *vox_Csec = vx;
-            *voy_Csec = vy;
-            *voz_Csek = vz;
-            *data_roll_grad = x_calibration_C;
-            *data_pitch_grad = y_calibration_C;
-            *data_yaw_grad = z_calibration_C;
-            x_calibration_C = Roll_Csec;
-            y_calibration_C = Pitch_Csec;
-            z_calibration_C = Yaw_Csec;
-            vx = Vx;
-            vy = Vy;
-            vz = Vz;
-        }
-    }
+    *vox_Csec += generate_normal_gyro();
+    *voy_Csec += generate_normal_gyro();
+    *voz_Csek += generate_normal_gyro();
+    *data_roll_grad += generate_normal_gyro();
+    *data_pitch_grad += generate_normal_gyro();
+    *data_yaw_grad += generate_normal_gyro();
     sqlite3 *db; // запись в бд
     char *err_msg = 0;
     int rc = sqlite3_open("Logs.db", &db);
@@ -180,7 +123,7 @@ double data_gyro(double *vox_Csec, double *voy_Csec, double *voz_Csek, double ox
         return 1;
     }
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO Gyroscopes VALUES (%d,%f,%f,%f)", time_request, *data_roll_grad, *data_pitch_grad, *data_yaw_grad); // угол наклона
+    snprintf(sql, sizeof(sql), "INSERT INTO Gyroscopes VALUES (%f,%f,%f,%f)", time_request, *data_roll_grad, *data_pitch_grad, *data_yaw_grad);
     rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
     if (rc != SQLITE_OK)
     {
@@ -190,5 +133,4 @@ double data_gyro(double *vox_Csec, double *voy_Csec, double *voz_Csek, double ox
         return 1;
     }
     sqlite3_close(db);
-    free(values);
 }

@@ -304,23 +304,23 @@ int main(void)
     int time_sec;         // время которое возвращается
     double X, Y, h_m, ox_c, oy_c, oz_c, vx_msec, vy_msec, vz_msec, vox_csec, voy_csec, voz_csec, ax_m2sec, ay_m2sec, az_m2sec, Bx_G, By_G, Bz_G, declination_c = 0, inclination_c = 0;
     char *direction = malloc(5);
-    double sys_er = 4.5;
+    double sys_er;
     int work_time = get_time(); // время работы
     sqlite3 *db;
     sqlite3_open("Logs.db", &db);
-    // while (true)
-    // {
-    //     printf("Введите погрешность от -4.5 до 4.5: ");
-    //     scanf("%lf", &sys_er); // ввод системной ошибки
-    //     if (sys_er >= -4.5 && sys_er <= 4.5)
-    //     {
-    //         break;
-    //     }
-    //     else
-    //     {
-    //         printf("Неверная системная ошибка. Введите еще раз\n");
-    //     }
-    // }
+    while (true)
+    {
+        printf("Введите погрешность от -4.5 до 4.5: ");
+        scanf("%lf", &sys_er); // ввод системной ошибки
+        if (sys_er >= -4.5 && sys_er <= 4.5)
+        {
+            break;
+        }
+        else
+        {
+            printf("Неверная системная ошибка. Введите еще раз\n");
+        }
+    }
     printf("%-10s| %-10s|%-42s | %-43s | %-40s | %s\n", "Время(сек):", "Курс:", "Гироскоп(град):", "Акселерометр(g):", "Магнетометер(mG):", "Барометр(mbar):");
     double dt = 1.0 / 200.0;
     int step = 0;

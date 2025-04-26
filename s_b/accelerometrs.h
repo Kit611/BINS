@@ -11,37 +11,52 @@
 #define SIGMA_ACCEL (1.29) // значение сигма для генерации
 #define LIMIT (3.0)        // ограничения дипозона
 
-void generate_normal_accel(double *values, int n) // генерация случайных значений нормальным распределением
+// генерация случайных значений нормальным распределением
+// void generate_normal_accel(double *values, int n)
+double generate_normal_accel()
 {
-    int i = 0;
-    while (i < n)
-    {
-        double u1, u2, s, z0, z1;
-        do
-        {
-            u1 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
-            u2 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
-            s = u1 * u1 + u2 * u2;
-        } while (s >= 1 || s == 0);
+    // int i = 0;
+    // while (i < n)
+    // {
+    static int has_spare = 0;
+    static double spare;
 
-        double factor = sqrt(-2.0 * log(s) / s);
-        z0 = u1 * factor * SIGMA_ACCEL;
-        z1 = u2 * factor * SIGMA_ACCEL;
-        if (z0 < -LIMIT * SIGMA_ACCEL)
-            z0 = -LIMIT * SIGMA_ACCEL;
-        if (z0 > LIMIT * SIGMA_ACCEL)
-            z0 = LIMIT * SIGMA_ACCEL;
-        if (z1 < -LIMIT * SIGMA_ACCEL)
-            z1 = -LIMIT * SIGMA_ACCEL;
-        if (z1 > LIMIT * SIGMA_ACCEL)
-            z1 = LIMIT * SIGMA_ACCEL;
-        values[i++] = z0;
-        if (i < n)
-            values[i++] = z1;
+    if (has_spare)
+    {
+        has_spare = 0;
+        return spare;
     }
+    double u1, u2, s, z0, z1;
+    do
+    {
+        u1 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+        u2 = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+        s = u1 * u1 + u2 * u2;
+    } while (s >= 1 || s == 0);
+
+    double factor = sqrt(-2.0 * log(s) / s);
+    z0 = u1 * factor * SIGMA_ACCEL;
+    z1 = u2 * factor * SIGMA_ACCEL;
+    if (z0 < -LIMIT * SIGMA_ACCEL)
+        z0 = -LIMIT * SIGMA_ACCEL;
+    if (z0 > LIMIT * SIGMA_ACCEL)
+        z0 = LIMIT * SIGMA_ACCEL;
+    if (z1 < -LIMIT * SIGMA_ACCEL)
+        z1 = -LIMIT * SIGMA_ACCEL;
+    if (z1 > LIMIT * SIGMA_ACCEL)
+        z1 = LIMIT * SIGMA_ACCEL;
+
+    spare = z1;
+    has_spare = 1;
+    return z0;
+    //     values[i++] = z0;
+    //     if (i < n)
+    //         values[i++] = z1;
+    // }
 }
 
-double integrate(double acceleration, double t_start, double t_end) // функция интегрирования для получения скорости
+// функция интегрирования для получения скорости
+double integrate(double acceleration, double t_start, double t_end)
 {
     double dt = t_end - t_start;
     double initial_velocity = 0;
@@ -51,19 +66,17 @@ double integrate(double acceleration, double t_start, double t_end) // функ�
 
 double vx, vy, vz;
 
-double data_accel(double *aX_m2sec, double *aY_m2sec, double *aZ_m2sec, double vx_msec, double vy_msec, double vz_msec, int num, int time_request, int count, double *Y_axis_msec, double *X_axis_msec, double *Z_axis_msec) // главная функция
+double data_accel(double *aX_m2sec, double *aY_m2sec, double *aZ_m2sec, double vx_msec, double vy_msec, double vz_msec, int num, double time_request, int count, double *Y_axis_msec, double *X_axis_msec, double *Z_axis_msec) // главная функция
 {
     srand(time(NULL));
-    double *values = (double *)malloc(count * sizeof(double)); // массив для сл значений
     // double *test = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для отправки итоговых значений для графика
     double X_msec, Y_msec, Z_msec;
-    if (values == NULL)
-    {
-        fprintf(stderr, "Ошибка выделения памяти\n");
-        return 1;
-    }
-    generate_normal_accel(values, count);
-    if (num == 3)
+    // if (values == NULL)
+    // {
+    //     fprintf(stderr, "Ошибка выделения памяти\n");
+    //     return 1;
+    // }
+    if (num == 3 || num == 4 || num == 5)
     {
         if (*aX_m2sec != 0 || *aY_m2sec != 0 || *aZ_m2sec != 1 || *aZ_m2sec != -1)
         {
@@ -108,85 +121,23 @@ double data_accel(double *aX_m2sec, double *aY_m2sec, double *aZ_m2sec, double v
         Y_msec = vy_msec;
         Z_msec = vz_msec;
     }
+    // для того чтобы основное число не менялось, а менялся только шум
     double x_msec = vx;
-    double y_msec = vy; // для того чтобы основное число не менялось, а менялся только шум
+    double y_msec = vy;
     double z_msec = vz;
     double ax = *aX_m2sec;
     double ay = *aY_m2sec;
     double az = *aZ_m2sec;
     double aX = ax, aY = ay, aZ = az;
-
-    if (time_request == 0)
-    {
-        X_msec += values[0];
-        Y_msec += values[78];
-        Z_msec += values[22];
-        *aX_m2sec += values[47];
-        *aY_m2sec += values[4];
-        *aZ_m2sec += values[67];
-        *X_axis_msec = X_msec;
-        *Y_axis_msec = Y_msec;
-        *Z_axis_msec = Z_msec;
-        X_msec = x_msec;
-        Y_msec = y_msec;
-        Z_msec = z_msec;
-    }
-    else if (time_request == 1)
-    {
-        X_msec += values[1];
-        Y_msec += values[44];
-        Z_msec += values[43];
-        *aX_m2sec += values[23];
-        *aY_m2sec += values[5];
-        *aZ_m2sec += values[65];
-        *X_axis_msec = X_msec;
-        *Y_axis_msec = Y_msec;
-        *Z_axis_msec = Z_msec;
-        X_msec = x_msec;
-        Y_msec = y_msec;
-        Z_msec = z_msec;
-    }
-    else if (time_request == 2)
-    {
-        X_msec += values[2];
-        Y_msec += values[87];
-        Z_msec += values[91];
-        *aX_m2sec += values[85];
-        *aY_m2sec += values[6];
-        *aZ_m2sec += values[12];
-        *X_axis_msec = X_msec;
-        *Y_axis_msec = Y_msec;
-        *Z_axis_msec = Z_msec;
-        X_msec = x_msec;
-        Y_msec = y_msec;
-        Z_msec = z_msec;
-    }
-    else
-    {
-        for (int i = 0; i < time_request; i++)
-        {
-            X_msec += values[i];
-            Y_msec += values[i - 1];
-            Z_msec += values[i - 2];
-            ax += values[i];
-            ay += values[i];
-            az += values[i];
-            // test[i]=Z_axis_acceleration;
-            *aX_m2sec = ax;
-            *aY_m2sec = ay;
-            *aZ_m2sec = az;
-            *X_axis_msec = X_msec;
-            *Y_axis_msec = Y_msec;
-            *Z_axis_msec = Z_msec;
-            X_msec = x_msec;
-            Y_msec = y_msec;
-            Z_msec = z_msec;
-            ax = aX;
-            ay = aY;
-            az = aZ;
-        }
-    }
-    sqlite3 *db; // запись в бд
+    *X_axis_msec += generate_normal_accel();
+    *Y_axis_msec += generate_normal_accel();
+    *Z_axis_msec += generate_normal_accel();
+    *aX_m2sec += generate_normal_accel();
+    *aY_m2sec += generate_normal_accel();
+    *aZ_m2sec += generate_normal_accel();
+    // test[i]=Z_axis_acceleration;
+    // запись в бд
+    sqlite3 *db;
     char *err_msg = 0;
     int rc = sqlite3_open("Logs.db", &db);
     if (rc != SQLITE_OK)
@@ -195,7 +146,7 @@ double data_accel(double *aX_m2sec, double *aY_m2sec, double *aZ_m2sec, double v
         return 1;
     }
     char sql[256];
-    snprintf(sql, sizeof(sql), "INSERT INTO Accelerometrs VALUES (%d,%f,%f,%f)", time_request, *X_axis_msec, *Y_axis_msec, *Z_axis_msec); // скорось по трем осям
+    snprintf(sql, sizeof(sql), "INSERT INTO Accelerometrs VALUES (%f,%f,%f,%f)", time_request, *X_axis_msec, *Y_axis_msec, *Z_axis_msec);
     rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
     if (rc != SQLITE_OK)
     {
@@ -205,5 +156,5 @@ double data_accel(double *aX_m2sec, double *aY_m2sec, double *aZ_m2sec, double v
         return 1;
     }
     sqlite3_close(db);
-    free(values);
+    // free(values);
 }
