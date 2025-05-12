@@ -12,12 +12,8 @@
 #define LIMIT (3.0)       // ограничение диапозона
 
 // генерация случайных значений нормальным распределением
-// void generate_normal_bar(double *values, int n)
 double generate_normal_bar()
 {
-    // int i = 0;
-    // while (i < n)
-    // {
     static int has_spare = 0;
     static double spare;
 
@@ -52,22 +48,10 @@ double generate_normal_bar()
     spare = z1;
     has_spare = 1;
     return z0;
-    //     values[i++] = z0;
-    //     if (i < n)
-    //         values[i++] = z1;
-    // }
 }
 
 double data_bar(double h_m, double sys_er, double time_request, int count)
 {
-    srand(time(NULL));
-    // double *values = (double *)malloc(count * sizeof(double)); // массив для сл значенийs
-    // double *Bar = (double *)malloc(NUM_SAMPLES * sizeof(double));//массив для отправки итоговых значений для графика
-    // if (values == NULL)
-    // {
-    //     fprintf(stderr, "Ошибка выделения памяти\n");
-    //     return 1;
-    // }
     double noise = generate_normal_bar();
     double real_h_m = h_m;
     double P_mbar;

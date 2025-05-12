@@ -1,104 +1,110 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <arpa/inet.h>
+#include <stdint.h>
+#include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <errno.h>
 
-#define SERVER_PORT 8080
+#define PORT 8080
 #define BUF_SIZE 1024
+#define PACKET_SIZE 26 // 8 + 9*2
 
-#pragma pack(push, 1)
-typedef struct
+// Инвертирование знака 16-битного числа как в Python
+int16_t invert(uint16_t ch)
 {
-    int length;         // 2 байт - 16 бит
-    uint64_t Time_nsec; // 8 байт - 64 бита
-    int h_mbar;         // 2 байта - 16 бита
-    int ox_c;
-    int oy_c;
-    int oz_c;
-    int vx_msec;
-    int vy_msec;
-    int vz_msec;
-    int vox_csec;
-    int voy_csec;
-    int voz_csec;
-    int ax_m2sec;
-    int ay_m2sec;
-    int az_m2sec;
-    int x_mG;
-    int y_mG;
-    int z_mG;
-} DataPacket;
-#pragma pack(pop)
+    if (ch & 0x8000)
+    {
+        ch = (~ch) & 0xFFFF;
+        ch += 1;
+        return -((int16_t)ch);
+    }
+    return (int16_t)ch;
+}
+
+// Распаковка и вывод содержимого пакета
+void process_packet(uint8_t *data)
+{
+    // Склейка времени из 8 байт
+    uint64_t t = 0;
+    for (int i = 0; i < 8; ++i)
+    {
+        t = (t << 8) | data[i];
+    }
+
+    int index = 8;
+    int16_t values[9];
+    for (int i = 0; i < 9; ++i)
+    {
+        uint16_t raw = (data[index] << 8) | data[index + 1];
+        values[i] = invert(raw);
+        index += 2;
+    }
+
+    printf("t = %lu | gyro = [%d %d %d] | accl = [%d %d %d] | magn = [%d %d %d]\n",
+           t, values[0], values[1], values[2],
+           values[3], values[4], values[5],
+           values[6], values[7], values[8]);
+}
 
 int main()
 {
-    int sock;
-    struct sockaddr_in server_addr, client_addr;
-    socklen_t addr_len = sizeof(client_addr);
+    int sockfd;
+    struct sockaddr_in servaddr;
+    uint8_t buffer[BUF_SIZE];
 
-    // Создаем UDP сокет
-    sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock < 0)
+    // Создание UDP-сокета
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
     {
         perror("socket failed");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
-    // Заполняем адрес и порт, на котором будем слушать
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(SERVER_PORT); // тот же порт, что и у отправителя
-    server_addr.sin_addr.s_addr = INADDR_ANY;  // принимать со всех интерфейсов
+    // Привязка адреса
+    memset(&servaddr, 0, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1"); // или INADDR_ANY
+    servaddr.sin_port = htons(PORT);
 
-    // Привязываем сокет
-    if (bind(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
     {
         perror("bind failed");
-        close(sock);
-        return 1;
+        close(sockfd);
+        exit(EXIT_FAILURE);
     }
 
-    printf("UDP приемник запущен. Ожидание данных...\n");
+    // Установка сокета в неблокирующий режим
+    fcntl(sockfd, F_SETFL, O_NONBLOCK);
+
+    printf("Listening for UDP packets on port %d...\n", PORT);
 
     while (1)
     {
-        DataPacket packet;
-        ssize_t received = recvfrom(sock, &packet, sizeof(packet), 0,
-                                    (struct sockaddr *)&client_addr, &addr_len);
-
-        if (received < 0)
+        ssize_t n = recvfrom(sockfd, buffer, BUF_SIZE, 0, NULL, NULL);
+        if (n == -1)
         {
-            perror("recvfrom failed");
+            if (errno != EAGAIN && errno != EWOULDBLOCK)
+            {
+                perror("recvfrom error");
+            }
+            usleep(1000); // уменьшить CPU usage
+            continue;
         }
-        else if (received == sizeof(packet))
+
+        if (n == PACKET_SIZE)
         {
-            printf("Принят пакет:\n");
-            printf("  Len: %d\n", packet.length);
-            printf("  Time: %ld\n", packet.Time_nsec);
-            printf("  H_mbar: %f\n", packet.h_mbar * 0.04);
-            printf("  Ox_c: %f\n", packet.ox_c * 0.02);
-            printf("  Oy_c: %f\n", packet.oy_c * 0.02);
-            printf("  Oz_c: %f\n", packet.oz_c * 0.02);
-            printf("  Vx_msec: %f\n", packet.vx_msec * 0.008);
-            printf("  Vy_msec: %f\n", packet.vy_msec * 0.008);
-            printf("  Vz_msec: %f\n", packet.vz_msec * 0.008);
-            printf("  Vox_csec: %f\n", packet.vox_csec * 0.02);
-            printf("  Voy_csec: %f\n", packet.voy_csec * 0.02);
-            printf("  Voz_csec: %f\n", packet.voz_csec * 0.02);
-            printf("  Ax_m2sec: %f\n", packet.ax_m2sec * 0.008);
-            printf("  Ay_m2sec: %f\n", packet.ay_m2sec * 0.008);
-            printf("  Az_m2sec: %f\n", packet.az_m2sec * 0.008);
-            printf("  X_mG: %f\n", packet.x_mG * 0.1);
-            printf("  Y_mG: %f\n", packet.y_mG * 0.1);
-            printf("  Z_mG: %f\n", packet.z_mG * 0.1);
+            process_packet(buffer);
         }
         else
         {
-            printf("Получен неполный пакет (%ld байт,%ld)\n", received, sizeof(packet));
+            printf("Invalid packet size: %ld bytes\n", n);
         }
     }
 
-    close(sock);
+    close(sockfd);
     return 0;
 }
