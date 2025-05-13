@@ -12,12 +12,8 @@
 #define LIMIT (3.0)        // ограничения дипозона
 
 // генерация случайных значений нормальным распределением
-// void generate_normal_gyro(double *values, int n)
 double generate_normal_gyro()
 {
-    // int i = 0;
-    // while (i < n)
-    // {
     static int has_spare = 0;
     static double spare;
 
@@ -48,10 +44,6 @@ double generate_normal_gyro()
     spare = z1;
     has_spare = 1;
     return z0;
-    //     values[i++] = z0;
-    //     if (i < n)
-    //         values[i++] = z1;
-    // }
 }
 
 void integrade_angle(double *x_Csek, double *y_Csek, double *z_Csek, double Dt)
@@ -64,14 +56,9 @@ void integrade_angle(double *x_Csek, double *y_Csek, double *z_Csek, double Dt)
 
 double data_gyro(double *vox_Csec, double *voy_Csec, double *voz_Csek, double ox_c, double oy_c, double oz_c, int num, double time_request, int count, double *data_roll_grad, double *data_pitch_grad, double *data_yaw_grad)
 {
-    srand(time(NULL));
     double x_calibration_C;
     double y_calibration_C;
     double z_calibration_C;
-    double vx = *vox_Csec;
-    double vy = *voy_Csec;
-    double vz = *voz_Csek;
-    double Vx = vx, Vy = vy, Vz = vz;
     if (num == 3 || num == 4 || num == 5)
     {
         if (*vox_Csec != 0 || *voy_Csec != 0 || *voz_Csek != 0)
@@ -105,15 +92,15 @@ double data_gyro(double *vox_Csec, double *voy_Csec, double *voz_Csek, double ox
         z_calibration_C = 0;
     }
 
-    double Roll_Csec = x_calibration_C;
-    double Pitch_Csec = y_calibration_C; // для того чтобы основное число не менялось, а менялся только шум
-    double Yaw_Csec = x_calibration_C;
+    x_calibration_C += generate_normal_gyro();
+    y_calibration_C += generate_normal_gyro();
+    z_calibration_C += generate_normal_gyro();
     *vox_Csec += generate_normal_gyro();
     *voy_Csec += generate_normal_gyro();
     *voz_Csek += generate_normal_gyro();
-    *data_roll_grad += generate_normal_gyro();
-    *data_pitch_grad += generate_normal_gyro();
-    *data_yaw_grad += generate_normal_gyro();
+    *data_roll_grad = x_calibration_C;
+    *data_pitch_grad = y_calibration_C;
+    *data_yaw_grad = z_calibration_C;
     sqlite3 *db; // запись в бд
     char *err_msg = 0;
     int rc = sqlite3_open("Logs.db", &db);

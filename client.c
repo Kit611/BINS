@@ -12,7 +12,7 @@
 
 #define PORT 8080
 #define BUF_SIZE 1024
-#define PACKET_SIZE 26 // 8 + 9*2
+#define PACKET_SIZE 40
 
 // Инвертирование знака 16-битного числа как в Python
 int16_t invert(uint16_t ch)
@@ -31,24 +31,24 @@ void process_packet(uint8_t *data)
 {
     // Склейка времени из 8 байт
     uint64_t t = 0;
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < 8; i++)
     {
         t = (t << 8) | data[i];
     }
 
     int index = 8;
-    int16_t values[9];
-    for (int i = 0; i < 9; ++i)
+    int16_t values[11];
+    for (int i = 0; i < 12; ++i)
     {
         uint16_t raw = (data[index] << 8) | data[index + 1];
         values[i] = invert(raw);
         index += 2;
     }
 
-    printf("t = %lu | gyro = [%d %d %d] | accl = [%d %d %d] | magn = [%d %d %d]\n",
-           t, values[0], values[1], values[2],
-           values[3], values[4], values[5],
-           values[6], values[7], values[8]);
+    printf(" t = %lu | lenght= %d | baro= %f | gyro = [%f %f %f] | accl = [%f %f %f] | magn = [%f %f %f]\n",
+           t, values[0], values[1] * 0.04, values[2] * 0.02, values[3] * 0.02, values[4] * 0.02,
+           values[5] * 0.0008, values[6] * 0.0008, values[7] * 0.0008,
+           values[8] * 0.1, values[9] * 0.1, values[10] * 0.1);
 }
 
 int main()

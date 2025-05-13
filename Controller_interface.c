@@ -14,33 +14,11 @@
 #define MAX_BUFFER_SIZE 1024
 #define PACKET_SIZE 26
 
-// #pragma pack(push, 1)
-// typedef struct
-// {
-//     // uint16_t length;         // 2 байт - 16 бит
-//     uint64_t Time_nsec; // 8 байт - 64 бита
-//     // uint16_t h_mbar;         // 2 байта - 16 бита
-//     // uint16_t ox_c;
-//     // uint16_t oy_c;
-//     // uint16_t oz_c;
-//     // uint16_t vx_msec;
-//     // uint16_t vy_msec;
-//     // uint16_t vz_msec;
-//     uint16_t vox_csec;
-//     uint16_t voy_csec;
-//     uint16_t voz_csec;
-//     uint16_t ax_m2sec;
-//     uint16_t ay_m2sec;
-//     uint16_t az_m2sec;
-//     uint16_t x_mG;
-//     uint16_t y_mG;
-//     uint16_t z_mG;
-// } DataPacket;
-// #pragma pack(pop)
-
 typedef struct
 {
-    uint64_t timestamp_ns;
+    // uint16_t length; // 2 байт - 16 бит
+    uint64_t timestamp_ns; // 8 байт - 64 бита
+    // uint16_t h_mbar; // 2 байта - 16 бита
     int16_t gyro_x;
     int16_t gyro_y;
     int16_t gyro_z;
@@ -63,20 +41,17 @@ typedef struct
     double x_G, y_G, z_G;
 } FlightData;
 
-void pack_data(uint8_t *buffer, uint64_t timestamp_ns,
-               int16_t gx, int16_t gy, int16_t gz,
+void pack_data(uint8_t *buffer, uint64_t timestamp_ns, int16_t gx, int16_t gy, int16_t gz,
                int16_t ax, int16_t ay, int16_t az,
                int16_t mx, int16_t my, int16_t mz)
 {
     int i = 0;
 
-    // timestamp — big-endian (64 бит)
     for (int shift = 56; shift >= 0; shift -= 8)
     {
         buffer[i++] = (timestamp_ns >> shift) & 0xFF;
     }
 
-// Макрос для упаковки int16_t
 #define PACK_INT16(val)                  \
     do                                   \
     {                                    \
@@ -100,55 +75,15 @@ void pack_data(uint8_t *buffer, uint64_t timestamp_ns,
 // отправка значений
 void send_data(double t, double h_m, double ox_c, double oy_c, double oz_c, double vx_msec, double vy_msec, double vz_msec, double vox_csec, double voy_csec, double voz_csec, double ax_m2sec, double ay_m2sec, double az_m2sec, double x_mG, double y_mG, double z_mG)
 {
-    // struct timespec ts;
-    // timespec_get(&ts, TIME_UTC);
-    // DataPacket packet;
-    // packet.Time_nsec = ts.tv_nsec;
-    // // packet.h_mbar =  (uint16_t)h_m;
-    // // packet.ox_c = (uint16_t)ox_c;
-    // // packet.oy_c = (uint16_t)oy_c;
-    // // packet.oz_c = (uint16_t)oz_c;
-    // // packet.vx_msec = (uint16_t)vx_msec;
-    // // packet.vy_msec = (uint16_t)vy_msec;
-    // // packet.vz_msec = (uint16_t)vz_msec;
-    // packet.vox_csec = (uint16_t)vox_csec;
-    // packet.voy_csec = (uint16_t)voy_csec;
-    // packet.voz_csec = (uint16_t)voz_csec;
-    // packet.ax_m2sec = (uint16_t)ax_m2sec;
-    // packet.ay_m2sec = (uint16_t)ay_m2sec;
-    // packet.az_m2sec = (uint16_t)az_m2sec;
-    // packet.x_mG = (uint16_t)x_mG;
-    // packet.y_mG = (uint16_t)y_mG;
-    // packet.z_mG = (uint16_t)z_mG;
-    // // packet.length = sizeof(DataPacket);
-    // int sock;
-    // struct sockaddr_in server_addr;
-
-    // sock = socket(AF_INET, SOCK_DGRAM, 0);
-    // if (sock < 0)
-    // {
-    //     perror("Ошибка создания сокета");
-    //     exit(EXIT_FAILURE);
-    // }
-
-    // memset(&server_addr, 0, sizeof(server_addr));
-    // server_addr.sin_family = AF_INET;
-    // server_addr.sin_port = htons(SERVER_PORT);
-    // inet_pton(AF_INET, host, &server_addr.sin_addr);
-    // ssize_t sent = sendto(sock, &packet, sizeof(DataPacket), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
-
-    // if (sent < 0)
-    // {
-    //     perror("senddto failed");
-    // }
-    // close(sock);
     uint8_t buffer[26];
-    // Данные
-    uint64_t timestamp_ns = t; // пример
-    int16_t gx = vox_csec, gy = voy_csec, gz = voz_csec;
-    // int16_t gx = ox_c, gy = oy_c, gz = oz_c;
-    int16_t ax = ax_m2sec, ay = ay_m2sec, az = az_m2sec;
-    int16_t mx = x_mG, my = y_mG, mz = z_mG;
+    // uint16_t lenght = sizeof(IMUPacket);
+    // uint16_t h_mbar = (h_m/0.04+0.5);
+    struct timespec ts;
+    timespec_get(&ts, TIME_UTC);
+    uint64_t timestamp_ns = ts.tv_nsec; // пример
+    int16_t gx = (vox_csec / 0.02 + 0.5), gy = (voy_csec / 0.02 + 0.5), gz = (voz_csec / 0.02 + 0.5);
+    int16_t ax = (ax_m2sec / 0.0008 + 0.5), ay = (ay_m2sec / 0.0008 + 0.5), az = (az_m2sec / 0.0008 + 0.5);
+    int16_t mx = (x_mG / 0.1 + 0.5), my = (y_mG / 0.1 + 0.5), mz = (z_mG / 0.1 + 0.5);
     pack_data(buffer, timestamp_ns, gx, gy, gz, ax, ay, az, mx, my, mz);
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0)

@@ -13,12 +13,8 @@
 #define DEG_TO_RAD (M_PI / 180.0) // для перевода в радианы
 
 // генерация случайных значений нормальным распределением
-// void generate_normal_mag(double *values, int n)
 double generate_normal_mag()
 {
-    // int i = 0;
-    // while (i < n)
-    // {
     static int has_spare = 0;
     static double spare;
 
@@ -49,10 +45,6 @@ double generate_normal_mag()
     spare = z1;
     has_spare = 1;
     return z0;
-    //     values[i++] = z0;
-    //     if (i < n)
-    //         values[i++] = z1;
-    // }
 }
 
 // расчет матрицы поворота
@@ -103,7 +95,6 @@ double mag_napr(double x, double y)
 
 double data_mag(double Bx_G, double By_G, double Bz_G, double roll_C, double pitch_C, double yaw_C, double time_request, int count, double *data_x_mG, double *data_y_mG, double *data_z_mG, double *declination_c, double *inclination_c)
 {
-    srand(time(NULL));
     double R[3][3];
     double x_G, y_G, z_G;
     compute_rotation_matrix(yaw_C, pitch_C, roll_C, R);              // расчет поворотной матрицы
@@ -111,12 +102,12 @@ double data_mag(double Bx_G, double By_G, double Bz_G, double roll_C, double pit
     double x_mG = x_G * 1000;
     double y_mG = y_G * 1000;
     double z_mG = z_G * 1000;
-    double X_mG = x_mG;
-    double Y_mG = y_mG; // для того чтобы основное число не менялось, а менялся только шум
-    double Z_mG = z_mG;
-    *data_x_mG += generate_normal_mag();
-    *data_y_mG += generate_normal_mag();
-    *data_z_mG += generate_normal_mag();
+    x_mG += generate_normal_mag();
+    y_mG += generate_normal_mag();
+    z_mG += generate_normal_mag();
+    *data_x_mG = x_mG;
+    *data_y_mG = y_mG;
+    *data_z_mG = z_mG;
     double data_xmG = abs(*data_x_mG);
     double data_ymG = abs(*data_y_mG);
     double data_zmG = abs(*data_z_mG);

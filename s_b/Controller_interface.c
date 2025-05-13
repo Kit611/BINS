@@ -12,30 +12,23 @@
 #define SERVER_PORT 8080
 #define SERVER_IP "127.0.0.1"
 #define MAX_BUFFER_SIZE 1024
+#define PACKET_SIZE 26
 
-#pragma pack(push, 1)
 typedef struct
 {
-    int length;         // 2 байт - 16 бит
-    uint64_t Time_nsec; // 8 байт - 64 бита
-    int h_mbar;         // 2 байта - 16 бита
-    int ox_c;
-    int oy_c;
-    int oz_c;
-    int vx_msec;
-    int vy_msec;
-    int vz_msec;
-    int vox_csec;
-    int voy_csec;
-    int voz_csec;
-    int ax_m2sec;
-    int ay_m2sec;
-    int az_m2sec;
-    int x_mG;
-    int y_mG;
-    int z_mG;
-} DataPacket;
-#pragma pack(pop)
+    // uint16_t length; // 2 байт - 16 бит
+    uint64_t timestamp_ns; // 8 байт - 64 бита
+    // uint16_t h_mbar; // 2 байта - 16 бита
+    int16_t gyro_x;
+    int16_t gyro_y;
+    int16_t gyro_z;
+    int16_t accl_x;
+    int16_t accl_y;
+    int16_t accl_z;
+    int16_t magn_x;
+    int16_t magn_y;
+    int16_t magn_z;
+} IMUPacket;
 
 typedef struct
 {
@@ -48,51 +41,69 @@ typedef struct
     double x_G, y_G, z_G;
 } FlightData;
 
-// отправка случайных значений для отрисовки графика по udp
-void send_data(double h_m, double ox_c, double oy_c, double oz_c, double vx_msec, double vy_msec, double vz_msec, double vox_csec, double voy_csec, double voz_csec, double ax_m2sec, double ay_m2sec, double az_m2sec, double x_mG, double y_mG, double z_mG, size_t size, const char *host)
+void pack_data(uint8_t *buffer, uint64_t timestamp_ns, int16_t gx, int16_t gy, int16_t gz,
+               int16_t ax, int16_t ay, int16_t az,
+               int16_t mx, int16_t my, int16_t mz)
 {
+    int i = 0;
+
+    for (int shift = 56; shift >= 0; shift -= 8)
+    {
+        buffer[i++] = (timestamp_ns >> shift) & 0xFF;
+    }
+
+#define PACK_INT16(val)                  \
+    do                                   \
+    {                                    \
+        buffer[i++] = (val >> 8) & 0xFF; \
+        buffer[i++] = val & 0xFF;        \
+    } while (0)
+
+    PACK_INT16(gx);
+    PACK_INT16(gy);
+    PACK_INT16(gz);
+    PACK_INT16(ax);
+    PACK_INT16(ay);
+    PACK_INT16(az);
+    PACK_INT16(mx);
+    PACK_INT16(my);
+    PACK_INT16(mz);
+
+#undef PACK_INT16
+}
+
+// отправка значений
+void send_data(double t, double h_m, double ox_c, double oy_c, double oz_c, double vx_msec, double vy_msec, double vz_msec, double vox_csec, double voy_csec, double voz_csec, double ax_m2sec, double ay_m2sec, double az_m2sec, double x_mG, double y_mG, double z_mG)
+{
+    uint8_t buffer[26];
+    // uint16_t lenght = sizeof(IMUPacket);
+    // uint16_t h_mbar = (h_m/0.04+0.5);
     struct timespec ts;
     timespec_get(&ts, TIME_UTC);
-    DataPacket packet;
-    packet.Time_nsec = ts.tv_nsec;
-    packet.h_mbar = (int)h_m;
-    packet.ox_c = (int)ox_c;
-    packet.oy_c = (int)oy_c;
-    packet.oz_c = (int)oz_c;
-    packet.vx_msec = (int)vx_msec;
-    packet.vy_msec = (int)vy_msec;
-    packet.vz_msec = (int)vz_msec;
-    packet.vox_csec = (int)vox_csec;
-    packet.voy_csec = (int)voy_csec;
-    packet.voz_csec = (int)voz_csec;
-    packet.ax_m2sec = (int)ax_m2sec;
-    packet.ay_m2sec = (int)ay_m2sec;
-    packet.az_m2sec = (int)az_m2sec;
-    packet.x_mG = (int)x_mG;
-    packet.y_mG = (int)y_mG;
-    packet.z_mG = (int)z_mG;
-    packet.length = sizeof(DataPacket);
-    int sock;
-    struct sockaddr_in server_addr;
-
-    sock = socket(AF_INET, SOCK_DGRAM, 0);
+    uint64_t timestamp_ns = ts.tv_nsec; // пример
+    int16_t gx = (vox_csec / 0.02 + 0.5), gy = (voy_csec / 0.02 + 0.5), gz = (voz_csec / 0.02 + 0.5);
+    int16_t ax = (ax_m2sec / 0.0008 + 0.5), ay = (ay_m2sec / 0.0008 + 0.5), az = (az_m2sec / 0.0008 + 0.5);
+    int16_t mx = (x_mG / 0.1 + 0.5), my = (y_mG / 0.1 + 0.5), mz = (z_mG / 0.1 + 0.5);
+    pack_data(buffer, timestamp_ns, gx, gy, gz, ax, ay, az, mx, my, mz);
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0)
     {
-        perror("Ошибка создания сокета");
-        exit(EXIT_FAILURE);
+        perror("socket failed");
     }
 
-    memset(&server_addr, 0, sizeof(server_addr));
+    struct sockaddr_in server_addr;
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SERVER_PORT);
-    inet_pton(AF_INET, host, &server_addr.sin_addr);
+    inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr);
 
-    ssize_t sent = sendto(sock, &packet, packet.length, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
-
+    // Отправляем
+    ssize_t sent = sendto(sock, buffer, sizeof(buffer), 0,
+                          (struct sockaddr *)&server_addr, sizeof(server_addr));
     if (sent < 0)
     {
-        perror("senddto failed");
+        perror("sendto failed");
     }
+
     close(sock);
 }
 
@@ -269,6 +280,7 @@ int write_bd(double time, double X, double Y, double h_mbar, char **direction, d
 
 int main(void)
 {
+    srand(time(NULL));
     int num_model;
     while (true)
     {
@@ -309,6 +321,7 @@ int main(void)
     double dt = 1.0 / 200.0;
     int step = 0;
     for (double i = 0; i < work_time; i += dt, step++)
+    // for (double i = 0; i < work_time; i++)
     {
         data_bd(time_request, &time_sec, &X, &Y, &h_m, &direction, &ox_c, &oy_c, &oz_c, &vx_msec, &vy_msec, &vz_msec, &vox_csec, &voy_csec, &voz_csec, &ax_m2sec, &ay_m2sec, &az_m2sec, &Bx_G, &By_G, &Bz_G);
         FlightData data; // запись в структуру
@@ -351,15 +364,21 @@ int main(void)
         double ix_G = interpolate(i, t0.time_sec, t1.time_sec, t0.x_G, t1.x_G);
         double iy_G = interpolate(i, t0.time_sec, t1.time_sec, t0.y_G, t1.y_G);
         double iz_G = interpolate(i, t0.time_sec, t1.time_sec, t0.z_G, t1.z_G);
-        data_gyro(&ivox_csec, &ivoy_csec, &ivoz_csec, iox_c, ioy_c, ioz_c, num_model, i, work_time, &data_roll_grad, &data_pitch_grad, &data_yaw_grad);     // данные с гироскопа
+        data_gyro(&ivox_csec, &ivoy_csec, &ivoz_csec, iox_c, ioy_c, ioz_c, num_model, i, work_time, &data_roll_grad, &data_pitch_grad, &data_yaw_grad); // данные с гироскопа
+        // data_gyro(&vox_csec, &voy_csec, &voz_csec, ox_c, oy_c, oz_c, num_model, i, work_time, &data_roll_grad, &data_pitch_grad, &data_yaw_grad); // данные с гироскопа
+
         data_accel(&iax_m2sec, &iay_m2sec, &iaz_m2sec, ivx_msec, ivy_msec, ivz_msec, num_model, i, work_time, &Y_axis_m_sec, &X_axis_m_sec, &Z_axis_m_sec); // данные с акселерометра
+        // data_accel(&ax_m2sec, &ay_m2sec, &az_m2sec, vx_msec, vy_msec, vz_msec, num_model, i, work_time, &Y_axis_m_sec, &X_axis_m_sec, &Z_axis_m_sec); // данные с акселерометра
+
         if (step % 2 == 0)
         {
             data_mag(ix_G, iy_G, iz_G, data_roll_grad, data_pitch_grad, data_yaw_grad, i, work_time, &data_x_mG, &data_y_mG, &data_z_mG, &declination_c, &inclination_c); // данные с магнетометра
+                                                                                                                                                                          // data_mag(Bx_G, By_G, Bz_G, data_roll_grad, data_pitch_grad, data_yaw_grad, i, work_time, &data_x_mG, &data_y_mG, &data_z_mG, &declination_c, &inclination_c); // данные с магнетометра
         }
         if (step % 4 == 0)
         {
             bar_mbar = data_bar(ih_m, sys_er, i, work_time); // данные с барометра
+            // bar_mbar = data_bar(h_m, sys_er, i, work_time); // данные с барометра
         }
         printf("%-10.3f | %-10s | (%f;%f;%f) | (%f;%f;%f) | (%f;%f;%f) | %f\n", i, direction, data_roll_grad, data_pitch_grad, data_yaw_grad, X_axis_m_sec, Y_axis_m_sec, Z_axis_m_sec, data_x_mG, data_y_mG, data_z_mG, bar_mbar);
         if (step % 200 == 0 && i != 0)
@@ -367,7 +386,9 @@ int main(void)
             time_request++;
         }
         write_bd(i, X, Y, bar_mbar, &direction, data_roll_grad, data_pitch_grad, data_yaw_grad, X_axis_m_sec, Y_axis_m_sec, Z_axis_m_sec, ivox_csec, ivoy_csec, ivoz_csec, iax_m2sec, iay_m2sec, iaz_m2sec, data_x_mG, data_y_mG, data_z_mG, declination_c, inclination_c);
-        send_data(bar_mbar, data_roll_grad, data_pitch_grad, data_yaw_grad, X_axis_m_sec, Y_axis_m_sec, Z_axis_m_sec, ivox_csec, ivoy_csec, ivoz_csec, iax_m2sec, iay_m2sec, iaz_m2sec, data_x_mG, data_y_mG, data_z_mG, 2, SERVER_IP);
+        // write_bd(i, X, Y, bar_mbar, &direction, data_roll_grad, data_pitch_grad, data_yaw_grad, X_axis_m_sec, Y_axis_m_sec, Z_axis_m_sec, vox_csec, voy_csec, voz_csec, ax_m2sec, ay_m2sec, az_m2sec, data_x_mG, data_y_mG, data_z_mG, declination_c, inclination_c);
+        send_data(i, bar_mbar, data_roll_grad, data_pitch_grad, data_yaw_grad, X_axis_m_sec, Y_axis_m_sec, Z_axis_m_sec, ivox_csec, ivoy_csec, ivoz_csec, iax_m2sec, iay_m2sec, iaz_m2sec, data_x_mG, data_y_mG, data_z_mG);
+        // send_data(i, bar_mbar, data_roll_grad, data_pitch_grad, data_yaw_grad, X_axis_m_sec, Y_axis_m_sec, Z_axis_m_sec, vox_csec, voy_csec, voz_csec, ax_m2sec, ay_m2sec, az_m2sec, data_x_mG, data_y_mG, data_z_mG);
     }
     free(direction);
     sqlite3_close(db);
